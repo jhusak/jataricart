@@ -8,6 +8,7 @@ The internal construction of JatariCart allows utilise max 256kB of flash memory
 
 Remember to fool the Operating System not to hang up by cart on/off, by:
 
+<pre>
 carton (x - bank to switch) 
         pha 
         sta $D580,x
@@ -17,7 +18,7 @@ carton (x - bank to switch)
         sta gintlk 
         pla 
         rts  
-
+</pre>
 
 
 flashwritelib.asx - 6502 code library for formatting flash/formatting sector and write byte.
