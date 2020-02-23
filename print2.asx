@@ -1,0 +1,66 @@
+
+	; jsr print
+	; dta c'Ala ma kota',$9b,0
+	; next instructions
+print  .proc
+        clc
+        pla
+        adc #$01
+        sta ?strv
+        pla
+        adc #$00
+        sta ?strv+1
+
+?strv	equ *+1
+	lda $ffff
+	bne ?prt
+	lda ?strv+1
+	pha
+	lda ?strv
+	pha
+	rts
+?prt	jsr $f2b0
+	inw ?strv
+	bne ?strv-1
+	rts	
+	.endp
+
+printhex .proc
+	jsr lHex
+	sta ?printhextmp
+	txa
+	jsr $f2b0
+
+?printhextmp equ * +1
+	lda #$ff
+	jmp $f2b0
+	.endp
+
+lHex    .proc
+
+// po deklaracji procedury .PROC z parametrami, automatycznie wymuszone zostaje wykonanie
+// makra @PULL, ktore zdejmie za nas parametry ze stosu programowego i umiesci je w pamieci
+// od adresu @PROC_VARS_ADR, etykiecie parametru LOW zostaje przypisany adres @PROC_VARS_ADR
+
+        pha
+        :4 lsr @
+
+        jsr HEX2INT
+
+        tax             ; wynik dzialania w regX
+
+        pla
+        and #$0f
+
+HEX2INT SED
+        CMP #$0A
+        ADC #'0'
+        CLD
+                        ; wynik dzialania w regA
+        rts
+	.endp
+
+printnl	.proc
+	lda #$9b
+	jmp $f2b0
+	.endp
