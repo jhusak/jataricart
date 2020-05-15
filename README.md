@@ -5,7 +5,7 @@ This software is for use with my super simple flash cartridge (no gals, only 3 7
 The cartridge is driven by addresses D500-D580; write to D500 sets the first bank - this is default boot bank. Write to D501 sets second bank etc. The max usable number with cart on is set by write to D51F; write to D580 switches off the cartridge.
 
 The internal construction of JatariCart allows utilise max 256kB of flash memory (32 banks) or of course PROM/EPROM memory.
-The memory package is plcc32.
+The memory package is plcc32. It is better to use 39sf020 memory, because sectors are 4096 bytes long, so it is easier to manage writing data (instead of four 64kB sectors)
 
 Flash memory can be programmed/flashed from Atari platform by flasher application, wchich you can find in "flashwriteexample" catalog.
 The flasher must be (for now) preassembled using mads assembler with proper rom file included bank by bank (the flasher source does it by itself).
