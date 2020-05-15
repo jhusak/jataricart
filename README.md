@@ -11,11 +11,13 @@ Remember to fool the Operating System not to hang up by cart on/off, by:
 <pre>
 carton (x - bank to switch) 
         pha 
+	sei
         sta $D580,x
         sta wsync ; needed for ntsc, no big difference in speed 
         sta wsync ; needed for ntsc 
         lda trig3 
         sta gintlk 
+	cli
         pla 
         rts  
 </pre>
