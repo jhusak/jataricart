@@ -1,7 +1,7 @@
 ; flash eeprom library
 ; by JHusak , 04.01.2020
 ; free to use.
-	icl 'atari.hea'
+	icl '../../lib/atari.hea'
 BankNum	equ	$88
 Counter	equ	$89
 operation	equ $8a
@@ -298,9 +298,9 @@ badcompare_tmp2 equ 	* +1
 	sec
 	jmp dmaon	
 ; -------
-	icl 'flashwritelib.asx'
+	icl '../../lib/flashwritelib.asx'
 
-	icl 'crc16_v2.asm'
+	icl '../../lib/crc16_v2.asm'
 
 	;jsr print
 	;dta c'AlaMaKota.',$9b,0
@@ -309,32 +309,50 @@ badcompare_tmp2 equ 	* +1
 	;lda #$aa
 	;jsr printhex
 	;jmp *
-	icl 'print2.asx'
+	icl '../../lib/print2.asx'
 	org $2e2
 	dta a($2000)
 ; ---------------------------------------
-; code generator for bank by bank programming.
-; .rept number of cartridge banks of 8kb; set this for 8kb banks number:
-; 256kb flash - 32
-; 128 kb flash - 16
-; 8 kb flash - 1
-;.rept 32, #
-.rept 1, #
-	.print "A :1"
-	.local block:1
+; D500 A000 offset:$0000
+; D503 A000 offset $1000
+; D504 A000 offset $2000
+; All: B000 offset $3000
+; blocks for every 8kb bank
 ;------------
 	org BankNum
-	dta b(:1)
+	dta b(0) ; $d500
 	dta b(1) ; Counter
 ;------------	
 	org _SOURCE
-	ins "missile.bin",+:1*8192,8192
+	ins "mac65.bin",+0*$1000+$0,$1000
+	ins "mac65.bin",+$3000+$0,$1000
 ;------------
 	org $2e2
 	dta a(MAIN_PROCESS)
 ;------------
-	.endl
- .endr
+	org BankNum
+	dta b(3) ; d503
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "mac65.bin",+1*$1000+$0,$1000
+	ins "mac65.bin",+$3000+$0,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(4) ; $d504
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "mac65.bin",+2*$1000+$0,$1000
+	ins "mac65.bin",+$3000+$0,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+
 ;------------
 	org $2e2
 	dta a(FINISH_PROCESS)
