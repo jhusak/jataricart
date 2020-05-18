@@ -28,7 +28,7 @@ carton (x - bank to switch)
 
 after each access. This will let the system think as cartridge never was switched/removed/inserted. Of course it is better (much better, obligue) that there is no display list, video memory and no interrupts in the area a000-bfff, which can be anything when bank swapping.
 
-Files and descriptions:
+## Files and descriptions:
 
 flashwritelib.asx - 6502 code library for formatting flash/formatting sector and write byte.
 
@@ -39,3 +39,5 @@ crc16_v2.asm - crc16 library for fast checking every sector (when flash is damag
 Compile (mads needed, http://mads.atari8.info):
 
 mads flashwrite.asx -o:flashwrite.xex
+
+# Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may other extensions.
