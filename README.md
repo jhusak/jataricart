@@ -40,4 +40,4 @@ Compile (mads needed, http://mads.atari8.info):
 
 mads flashwrite.asx -o:flashwrite.xex
 
-# Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may other extensions.
+# Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.
