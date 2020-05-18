@@ -1,6 +1,6 @@
-# JatariCart
+# J(atari)Cart(256)
 
-This software is for use with my super simple flash cartridge (no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements.
+This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements.
 
 The cartridge is driven by addresses D500-D580; write to D500 sets the first bank - this is default boot bank. Write to D501 sets second bank etc. The max usable number with cart on is set by write to D51F; write to D580 switches off the cartridge.
 
