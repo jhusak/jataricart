@@ -14,3 +14,9 @@ When all is ok, the menu will appear:
 	OPTION - verify only
 
 Choose your option (START will be good)
+
+After some beeps and pauses the flasher finishes it's job.
+
+	Finished.
+
+__Warning: for now action and mac65 flashers do write some ! (that means bad compare) - please ignore it for skipped banks; the important ones are 0,3 and 4 banks (this will be cleared in the future)__
