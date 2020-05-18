@@ -32,7 +32,7 @@ after each access. This will let the system think as cartridge never was switche
 
 flashwritelib.asx - 6502 code library for formatting flash/formatting sector and write byte.
 
-flashsrite.asx - 6502 code for generate flasher (when compiled, it contains either flash routines and cartridge image itself)
+flashwrite.asx - 6502 code for generate flasher (when compiled, it contains either flash routines and cartridge image itself)
 
 crc16_v2.asm - crc16 library for fast checking every sector (when flash is damaged, sometimes it happens that write sector damages another)
 
