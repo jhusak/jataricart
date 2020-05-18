@@ -12,7 +12,7 @@ The flasher must be (for now) preassembled using mads assembler with proper rom 
 
 If you want to write your own cartridge access, remember to fool the Operating System not to hang up by cart on/off, by:
 
-<pre>
+```
 carton (x - bank to switch) 
         pha 
 	sei
@@ -24,7 +24,7 @@ carton (x - bank to switch)
 	cli
         pla 
         rts  
-</pre>
+```
 
 after each access. This will let the system think as cartridge never was switched/removed/inserted. Of course it is better (much better, obligue) that there is no display list, video memory and no interrupts in the area a000-bfff, which can be anything when bank swapping.
 
@@ -40,4 +40,5 @@ Compile (mads needed, http://mads.atari8.info):
 
 mads flashwrite.asx -o:flashwrite.xex
 
-# Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.
+** Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.**
+
