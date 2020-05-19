@@ -1,7 +1,25 @@
-; flash eeprom library
-; by JHusak , 04.01.2020
-; free to use.
+; JatariCart256 Action!3.6 flasher
+; by Jakub Husak , 04.01.2020
+; All Rights Reserved.
+;
+; Action!3.6: Copyright 1983 by Clinton W Parker.
+;
+; JatariCart256 is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; JatariCart256 is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with JatariCart256.  If not, see <http://www.gnu.org/licenses/>.
+;
 	icl '../../lib/atari.hea'
+; uncomment when flashing all cart or want to check all blocks written so far.
+;.def compareall
 BankNum	equ	$88
 Counter	equ	$89
 operation	equ $8a
@@ -157,8 +175,10 @@ _tbanknum	equ * + 1
 	mva _tbanknum calccrc_bank
 	jsr CALCCRC_DEST
 	jsr status_crc
+	.ifdef compareall
 	dec _tbanknum
 	bpl @-
+	.endif
 	sta $D580
 	lda $d013
 	sta $3fa
