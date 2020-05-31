@@ -367,7 +367,7 @@ badcompare_tmp2 equ 	* +1
 ;------------	
 	org _SOURCE
 	ins "BASIC XE 4.1.rom",+$2000,$1000
-	ins "BASIC XE 4.1.rom",+$0000+$0,$1000
+	ins "BASIC XE 4.1.rom",+$0000,$1000
 ;------------
 	org $2e2
 	dta a(MAIN_PROCESS)
