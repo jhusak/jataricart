@@ -19,10 +19,10 @@ Po kilku popikiwaniach i przerwach flasher kończy pracę.
 	
 __NIE PRZERYWAJ PRACY PODCZAS FLASHOWANIA!!! (tzn. gdy flasher nie odczytuje z dysku, a zapisuje do kartridża)__
 
+ 
 
 
-
-
+ 
 
 EN:
 
