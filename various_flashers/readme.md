@@ -19,6 +19,11 @@ Po kilku popikiwaniach i przerwach flasher kończy pracę.
 	
 __NIE PRZERYWAJ PRACY PODCZAS FLASHOWANIA!!! (tzn. gdy flasher nie odczytuje z dysku, a zapisuje do kartridża)__
 
+
+
+
+
+
 EN:
 
 Please put those file on disk, or on atr file or simply copy and run from sio2sd or another device which allows running executables.
