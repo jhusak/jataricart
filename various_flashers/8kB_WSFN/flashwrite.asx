@@ -343,6 +343,10 @@ badcompare_tmp2 equ 	* +1
 ;------------	
 	org _SOURCE
 	ins "WSFN.rom"
+
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
 ;------------
 	org $2e2
 	dta a(FINISH_PROCESS)

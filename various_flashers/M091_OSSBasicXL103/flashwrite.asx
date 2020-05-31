@@ -1,6 +1,8 @@
-; JatariCart256 flasher
+; JatariCart256 Action!3.6 flasher
 ; by Jakub Husak , 04.01.2020
 ; All Rights Reserved.
+;
+; Action!3.6: Copyright 1983 by Clinton W Parker.
 ;
 ; JatariCart256 is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -331,10 +333,10 @@ badcompare_tmp2 equ 	* +1
 	org $2e2
 	dta a($2000)
 ; ---------------------------------------
-; D500 A000 offset:$0000
-; D503 A000 offset $1000
-; D504 A000 offset $2000
-; All: B000 offset $3000
+; D500 A000 20 6c  offset:$0000
+; D503 A000 85 86 offset $1000
+; D504 A000 20 dd offset $2000
+; All: B000 36 01 offset $3000
 ; blocks for every 8kb bank
 ;------------
 	org BankNum
@@ -342,11 +344,35 @@ badcompare_tmp2 equ 	* +1
 	dta b(1) ; Counter
 ;------------	
 	org _SOURCE
-	ins "Atari PILOT.rom"
-
+	ins "OSSBasicXL103.rom",0,$1000
+	ins "OSSBasicXL103.rom",+1*$1000+$0,$1000
 ;------------
 	org $2e2
 	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(9) ; d501
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "OSSBasicXL103.rom",0,$1000
+	ins "OSSBasicXL103.rom",+2*$1000+$0,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(1) ; $d509
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "OSSBasicXL103.rom",0,$1000
+	ins "OSSBasicXL103.rom",+3*$1000+$0,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+
 ;------------
 	org $2e2
 	dta a(FINISH_PROCESS)
