@@ -1,0 +1,348 @@
+; JatariCart256 flasher
+; by Jakub Husak , 04.01.2020
+; All Rights Reserved.
+;
+; JatariCart256 is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; JatariCart256 is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with JatariCart256.  If not, see <http://www.gnu.org/licenses/>.
+;
+	icl '../../lib/atari.hea'
+; uncomment when flashing all cart or want to check all blocks written so far.
+;.def compareall
+BankNum	equ	$88
+Counter	equ	$89
+operation	equ $8a
+start	equ	6	; format chip and program
+select  equ	5	; ferify and format sectors
+option	equ	3	; verify
+outchar equ	$F2B0
+memtop 	equ	$2e5
+dmactls	equ	$22f
+
+_SOURCE	equ	$6000
+_DEST	equ	$A000
+
+; test code
+	org $2000
+	jsr $f420 ; clrscr
+	lda portb
+	cmp #$fd
+	beq @+
+	jsr print
+	dta c'Run with BASIC enabled and restart.',0
+	jmp *
+@	lda #$1
+	sta 66
+	; waiting for cart to be inserted
+	jsr print
+	dta c'Insert cartridge...',0
+@	lda $D013
+	lsr 
+	bcc @-
+	jsr print
+	dta c' inserted.',$9b,0
+	
+	; cart inserted, fake it was not changed
+	lda $d013
+	sta $3fa
+
+	;lda #$ff
+	;sta $d301
+	
+	jsr print
+	dta c'Press:',$9b
+	dta c'START  - format cart and programm',$9b
+	dta c'SELECT - verify; repair bad blocks.',$9b
+	dta c'OPTION - verify only',$9b,0
+@	lda 53279
+	cmp #7
+	beq @-
+	sta operation
+
+	cmp #select
+	beq VERIFYREPAIR
+
+	cmp #option
+	beq CHECKONLY
+	; start
+FORMAT  
+	jsr print
+	dta c'Formatting cart ...',0
+	jsr flashformatchip
+	bcs formatfailed
+	jsr print
+	dta c'done:)',$9b,0
+	rts
+formatfailed
+	jsr print
+	dta c'failed:(',$9b,'Waiting for reboot...',$9b,0
+	jmp *
+VERIFYREPAIR
+	jsr print
+	dta c'Verify and ',0
+CHECKONLY
+	jsr print
+	dta c'Compare.',$9b,0
+	rts
+crcsums
+	:128 dta 0,0
+
+CHECKINIT
+	mwa #_SOURCE _csrc
+	mwa #_DEST _cdst
+	sei
+CHECK
+
+	mva #0 badcompare_counter
+	sta badcompare_counter+1
+	ldx BankNum
+	sta $d500,x
+checkloop
+_csrc	equ * + 1
+	lda $6000 ; src
+_cdst	equ * + 1
+	cmp $A000 ; dst
+	beq @+
+	lda _csrc
+	ldx _csrc+1
+	jsr BADCOMPARE
+@	inw _csrc
+	inw _cdst
+	lda _csrc+1
+	cmp #>_SOURCE+$20
+	bne checkloop
+	cpw #0 badcompare_counter
+	beq @+
+	sta $d580
+	lda $d013
+	sta $3fa
+	cli
+	jsr print
+	dta c'non-match byte#:',0
+	lda badcompare_counter+1
+	jsr printhex
+	lda badcompare_counter
+	jsr printhex
+	jsr printnl
+	sec
+	rts
+@	sta $d580
+	lda $d013
+	sta $3fa
+	cli
+	lda #'o'
+	jsr outchar
+@	clc
+dmaon	mva #34 dmactls
+	sta dmactl
+	rts
+VERIFY
+	;mwa #_SOURCE _csrc
+	;mwa #_DEST _cdst
+	jsr CHECKINIT
+	bcc v_rts
+	lda #'f'
+	jsr outchar
+	ldx BankNum
+	lda #$a0
+	jsr flashformatsector
+	ldx BankNum
+	lda #$b0
+	jsr flashformatsector
+	jsr FORMATTED
+	dec Counter
+	bne VERIFY
+v_rts	jmp dmaon
+
+COMPARE_CRC16_DEST_ALL
+	lda BankNum
+	sta _tbanknum
+@	sei
+_tbanknum	equ * + 1
+	sta $D500
+	clc
+	mva _tbanknum calccrc_bank
+	jsr CALCCRC_DEST
+	jsr status_crc
+	.ifdef compareall
+	dec _tbanknum
+	bpl @-
+	.endif
+	sta $D580
+	lda $d013
+	sta $3fa
+	cli
+	rts
+status_crc
+	php
+	jsr printBank_t
+	plp
+	php
+	sne
+	lda #'o'
+	plp
+	seq
+	lda #'!'
+	jsr outchar
+	lda #','
+	jmp outchar
+	
+	
+CALCCRC_DEST
+	php
+	mwa #_DEST _tsrc
+	bne crccont
+
+CALCCRC ; c=1 - write; c=0 - check
+	php
+	mwa #_SOURCE _tsrc
+	mwa #$2000 _tcnt
+crccont	mwa #$ffff crc16.crc
+_tsrc	equ * + 1
+	lda $ffff
+	jsr crc16.updCRC
+	inw _tsrc
+	dew _tcnt
+	bne _tsrc -1
+calccrc_bank	equ * +1
+	lda #$ba ; nk number
+	asl 
+	tax
+	plp
+	bcc crccheck
+	mwa crc16.crc crcsums,x
+	rts
+_tcnt	:2 dta 0
+crccheck
+	cpw crc16.crc crcsums,x
+	rts
+
+
+printBank_t
+	lda _tbanknum
+	bpl @+
+printBank
+	jsr printnl
+	lda BankNum
+@	pha
+	lda #'B'
+	jsr outchar
+	pla
+	jsr printhex
+	lda #':'
+	jmp outchar
+	
+MAIN_PROCESS
+	;mva #0 dmactls
+	;sta dmactl
+	sec
+	mva BankNum calccrc_bank
+	jsr CALCCRC
+	mwa #_DEST flashaddr
+	jsr printBank
+
+	lda operation
+	cmp #select
+	jeq VERIFY
+
+	cmp #option
+	jeq CHECKINIT
+
+FORMATTED
+	mwa #_SOURCE _writeaddr
+	lda _writeaddr+1
+	clc
+	adc #$20
+	sta _cmpaddr
+	mwa #_DEST flashaddr
+	sec
+formatted_next
+	ldx BankNum
+formatted_next2
+_writeaddr	equ *+1
+	lda $ffff
+	jsr flashwritebyte
+	jsr flashincaddr
+	inw _writeaddr
+_cmpaddr	equ * + 1
+	lda #$ff
+	cmp _writeaddr+1
+	bne formatted_next2
+	
+	jmp COMPARE_CRC16_DEST_ALL
+
+FINISH_PROCESS
+	jsr print
+	dta $9b,'Finished',0
+	jmp *
+	rts
+badcompare_counter	dta 0,0
+BADCOMPARE
+	ldy 53279
+	cpy #7
+	beq @+
+	pha
+	txa
+	pha
+	lda #'!'
+	jsr outchar
+	pla
+	jsr printhex
+	pla
+	jsr printhex
+	lda #':'
+	jsr outchar
+	mwa _csrc badcompare_tmp1
+badcompare_tmp1 equ 	* +1
+	lda $ffff
+	jsr printhex
+	lda #'/'
+	jsr outchar
+	mwa _cdst badcompare_tmp2
+badcompare_tmp2 equ 	* +1
+	lda $ffff
+	jsr printhex
+	jsr printnl
+@	inw badcompare_counter
+	sec
+	jmp dmaon	
+; -------
+	icl '../../lib/flashwritelib.asx'
+
+	icl '../../lib/crc16_v2.asm'
+
+	;jsr print
+	;dta c'AlaMaKota.',$9b,0
+	;lda #$55
+	;jsr printhex
+	;lda #$aa
+	;jsr printhex
+	;jmp *
+	icl '../../lib/print2.asx'
+	org $2e2
+	dta a($2000)
+; ---------------------------------------
+; D500 A000 offset:$0000
+; D503 A000 offset $1000
+; D504 A000 offset $2000
+; All: B000 offset $3000
+; blocks for every 8kb bank
+;------------
+	org BankNum
+	dta b(0) ; $d500
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "Atari PILOT.rom"
+;------------
+	org $2e2
+	dta a(FINISH_PROCESS)
