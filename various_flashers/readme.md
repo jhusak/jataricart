@@ -22,7 +22,7 @@ __NIE PRZERYWAJ PRACY PODCZAS FLASHOWANIA!!! (tzn. gdy flasher nie odczytuje z d
  
 
 
- 
+--------------------------------------------------------------------------------------------------------------------- 
 
 EN:
 
