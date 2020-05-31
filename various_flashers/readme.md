@@ -19,7 +19,8 @@ Po kilku popikiwaniach i przerwach flasher kończy pracę.
 	
 __NIE PRZERYWAJ PRACY PODCZAS FLASHOWANIA!!! (tzn. gdy flasher nie odczytuje z dysku, a zapisuje do kartridża)__
 
----------ENGLISH---------
+EN:
+
 Please put those file on disk, or on atr file or simply copy and run from sio2sd or another device which allows running executables.
 Run flasher _WITH_ BASIC enabled (there is a need to run with MEMTOP set as $A000)
 When program says:
