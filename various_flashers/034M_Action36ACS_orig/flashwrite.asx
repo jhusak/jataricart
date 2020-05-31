@@ -344,7 +344,7 @@ badcompare_tmp2 equ 	* +1
 	dta b(1) ; Counter
 ;------------	
 	org _SOURCE
-	ins "action.bin",+0*$1000+$0,$1000
+	ins "action.bin",+$0000+$0,$1000
 	ins "action.bin",+$3000+$0,$1000
 ;------------
 	org $2e2
@@ -355,7 +355,7 @@ badcompare_tmp2 equ 	* +1
 	dta b(1) ; Counter
 ;------------	
 	org _SOURCE
-	ins "action.bin",+1*$1000+$0,$1000
+	ins "action.bin",+$1000+$0,$1000
 	ins "action.bin",+$3000+$0,$1000
 ;------------
 	org $2e2
@@ -366,7 +366,7 @@ badcompare_tmp2 equ 	* +1
 	dta b(1) ; Counter
 ;------------	
 	org _SOURCE
-	ins "action.bin",+2*$1000+$0,$1000
+	ins "action.bin",+$2000+$0,$1000
 	ins "action.bin",+$3000+$0,$1000
 ;------------
 	org $2e2
