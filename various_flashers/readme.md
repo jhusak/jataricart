@@ -20,5 +20,3 @@ After some beeps and pauses the flasher finishes it's job.
 	Finished.
 
 __DO NOT BREAK THE JOB DURING FLASHING!!! (ie when flasher does not read from the disk)__
-
-__Warning: for now action and mac65 flashers do write some "!" (instead of "o" for ok; "!" means bad compare) - please ignore it for skipped banks; the important ones are 0,3 and 4 banks (this will be fixed in the future)__
