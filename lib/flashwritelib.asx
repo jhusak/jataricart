@@ -43,7 +43,7 @@ flashoppreamble
 ; PROCEDURE
 flashformatchip2
 	ldx #$40
-	dat { bit.w }
+	dta { bit.w }
 flashformatchip
 	ldx #0
 	sei
