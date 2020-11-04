@@ -1,0 +1,4 @@
+add 28SF0x0 flashes
+create more universal flasher with either concatenated rom or provided in another file
+
+
