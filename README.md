@@ -53,3 +53,5 @@ Compile (mads needed, http://mads.atari8.info):
 mads flashwrite.asx -o:flashwrite.xex
 
 __Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.__
+
+__The cartridge projest is on heavy development state. Please expect frequent changes.__
