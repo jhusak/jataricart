@@ -2,7 +2,7 @@
 
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
 
-The banking scheme was chosen because it is very simple to handle with 3 raw TTL chips (and two diodes acting as triple "or" gate in version 1MB). There is no probably simplier scheme, either in application or in handling by 6502 (only one instruction needed to change bank)
+The banking scheme was chosen because it is very simple to handle with 3 raw TTL chips (and two double diodes acting as triple "or" gate in version 1MB). There is no probably simplier scheme, either in application or in handling by 6502 (only one instruction needed to change bank)
 
 The cartridge is driven by addresses D500-D580; write to D500 sets the first bank - this is default boot bank. Write to D501 sets second bank etc. The max bank is set by write to D57F; write to D580 switches off the cartridge. The banks will overlap if there are less of them than 128.
 
