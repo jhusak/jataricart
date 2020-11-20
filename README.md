@@ -1,5 +1,7 @@
 # J(atari)Cart256(kB) J(atari)Cart1024(kB)
 
+__The cartridge projest is on heavy development state. Please expect frequent changes.__
+
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
 
 The banking scheme was chosen because it is very simple to handle with 3 raw TTL chips (and two double diodes acting as triple "or" gate in version 1MB). There is probably no simplier scheme, either in application or in handling by 6502 (only one instruction needed to change bank)
@@ -56,4 +58,3 @@ mads flashwrite.asx -o:flashwrite.xex
 __The JCart256/1024 is compatible with Atari MaxFlash 8megabits cartridge regarding banking scheme, but MaxFlash flashing software does not recognize the JCart256/1024 cartidge.__
 __Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.__
 
-__The cartridge projest is on heavy development state. Please expect frequent changes.__
