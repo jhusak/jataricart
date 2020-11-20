@@ -1,8 +1,8 @@
-# J(atari)Cart(256)kB J(atari)Cart1MB
+# J(atari)Cart256(kB) J(atari)Cart1024(kB)
 
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
 
-The banking scheme was chosen because it is very simple to handle with 3 raw TTL chips (and two double diodes acting as triple "or" gate in version 1MB). There is no probably simplier scheme, either in application or in handling by 6502 (only one instruction needed to change bank)
+The banking scheme was chosen because it is very simple to handle with 3 raw TTL chips (and two double diodes acting as triple "or" gate in version 1MB). There is probably no simplier scheme, either in application or in handling by 6502 (only one instruction needed to change bank)
 
 The cartridge is driven by addresses D500-D580; write to D500 sets the first bank - this is default boot bank. Write to D501 sets second bank etc. The max bank is set by write to D57F; write to D580 switches off the cartridge. The banks will overlap if there are less of them than 128.
 
@@ -12,9 +12,9 @@ For Jataricart1MB there are a lot more possibilities, because of two memory chip
 However and ever, you can sit two 39SF040 flash chips to have 1 MB of flash memory, (almost: old MaxFlash booting from last bank) fully (Maxflash newer, boot bank 0) compatible with Atari MaxFlash Cartridges (Space Harrier fully supported!), always first boot bank, remember?
 
 Summary:
-- first chip can be hardware write-protected even if flash installed,
-- second has no hardware write protection;
-- both chips can be totally different.
+- first chip can be hardware write-protected even if flash installed (JCart1024)
+- second has no hardware write protection (JCart1024)
+- both chips can be totally different (JCart1024)
 - most 28x, 29x, 39x family work, but for now flashing software is prepared to work with 39sf0x0 memories, 28sf0x0 is in progress.
 
 The internal construction of JatariCart256kB allows utilize max 256kB of flash memory (32 banks) of PROM/EPROM memory.
@@ -31,8 +31,8 @@ carton (x - bank to switch)
         pha 
 	sei
         sta $D500,x
-        sta wsync ; needed for some TV systems, no big difference in speed 
-        sta wsync ; needed for some TV systems, no big difference in speed 
+        sta wsync ; needed for some TV systems, no big difference in speed, may be skipped
+        sta wsync ; needed for some TV systems, no big difference in speed, may be skipped
         lda trig3 
         sta gintlk 
 	cli
@@ -53,7 +53,7 @@ crc16_v2.asm - crc16 library for fast checking every sector (when flash is damag
 Compile (mads needed, http://mads.atari8.info):
 
 mads flashwrite.asx -o:flashwrite.xex
-
+__The JCart256/1024 is compatible with Atari MaxFlash 8megabits cartridge regarding banking scheme, but MaxFlash flashing software does not recognize the JCart256/1024 cartidge.__
 __Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.__
 
 __The cartridge projest is on heavy development state. Please expect frequent changes.__
