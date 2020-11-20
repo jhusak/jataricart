@@ -55,6 +55,8 @@ crc16_v2.asm - crc16 library for fast checking every sector (when flash is damag
 Compile (mads needed, http://mads.atari8.info):
 
 mads flashwrite.asx -o:flashwrite.xex
+
 __The JCart256/1024 is compatible with Atari MaxFlash 8megabits cartridge regarding banking scheme, but MaxFlash flashing software does not recognize the JCart256/1024 cartidge.__
+
 __Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.__
 
