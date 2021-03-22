@@ -52,5 +52,5 @@ After some beeps and pauses the flasher finishes it's job.
 
 	Finished.
 
-__DO NOT BREAK THE JOB DURING FLASHING!!! (ie when flasher does not read from the disk)__
+__DO NOT BREAK THE JOB DURING FLASHING!!! (ie when flasher does not read from the disk, but writes to it)__
 You are free to do it during read from device.
