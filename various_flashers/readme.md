@@ -4,7 +4,7 @@ albo
 2. uruchomi się kartridż.
 W drugim przypadku, należy trzymając OPTION po kilka-kilkanaście razy kilka razy na sekundę wciskać klawisz RESET, aż zaziała tzw. błąd resetu i komputer zbootuje się na zimno i pozwoli wczytać flasher. Jeśli na kartridżu jest coś nagrane, to w zależności co, można:
 * jeśli jest nagrane coś, co wyłącza kartridż, należy poczekać do tego momentu, następnie wcisnąć reset lub wykorzystać błąd reset.
-* jeśli jest nagrane coś, co kartridża nie wyłącza, należy próbować wykorzystać błąd reset, a w ostateczności, jak nijak nie idzie, włożyć dokładnie i poziomo stanowczym ruchem włożyć kartridż po uruchomieniu flashera, gdy prosi on o włożenie kartridża.
+* jeśli jest nagrane coś, co kartridża nie wyłącza, należy próbować wykorzystać błąd reset, a w ostateczności, jak nijak nie idzie, włożyć dokładnie i poziomo stanowczym ruchem włożyć kartridż po uruchomieniu flashera, gdy prosi on o włożenie kartridża.  Jednak grozi to uszkodzeniem komputera (mała szansa ale jednak).
 * wykorzystać przejściówkę - rozgałęziacz kartridży, np. ten od toriego na 4 sztuki.
 
 Gdy wszystko pójdzie dobrze, pojawi się menu:
@@ -36,7 +36,7 @@ Turn on your Atari with OPTION. Then one of two cases will occur:
 2. the cartridge will run.
 In the second case, holding OPTION press several times in series (a few presses per second) RESET key untill so-called reset bug will occur and computer will boot up and let run the flasher. If there is something recorded on the cartridge, depending on what, you can:
 * if there is something recorded that disables the cartridge, wait until then, then press reset or use the reset error.
-* if there is something recorded, that does not disable the cartridge, try to use the reset error, and as a last resort, if nothing works, insert the cartridge firmly, horizontally in one move, when the flasher asks you to insert the cartridge.
+* if there is something recorded, that does not disable the cartridge, try to use the reset error, and as a last resort, if nothing works, insert the cartridge firmly, horizontally in one move, when the flasher asks you to insert the cartridge (however, you risk in computer damage, a little, but...)
 * Use an adapter - cartridge splitter, for example the one from tori for 4 pieces.
 
 When all is ok, the menu will appear:
