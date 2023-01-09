@@ -1,0 +1,303 @@
+; flash eeprom library
+; by JHusak , 04.01.2020
+; free to use.
+lstore_x dta 0
+; x - 0x0 or 0x40 - chip select
+; c - 1 - format, 0 - write
+	;.print flashcnt
+flashoppreamble
+
+	pha
+	txa
+	pha
+	; when write byte x must be set to either 0 or 40 temporarily
+	and #$40
+	tax
+	; $5555<$aa
+@	sta $d502,x
+	lda #$aa
+	sta $b555
+	; $2aaa<$55
+	sta $d501,x
+	lda #$55
+	sta $aaaa
+	; $5555<$80
+	sta $d502,x
+	; sector format: carry set
+	scc
+		lda #$80 ; sector erase
+	scs
+		lda #$a0 ; byte programm
+	sta  $b555
+	bcc @+
+	; $5555<$aa
+	sta $d502,x
+	lda #$aa
+	sta $b555
+	; $2aaa<$55
+	sta $d501,x
+	lda #$55
+	sta $aaaa
+
+	; PREPARE FOR SECTOR TO ERASE
+
+	; set upper bank bits
+@	pla
+	tax
+	pla
+	rts
+
+; --------------------------
+; PROCEDURE
+; x = 0 or 0x40 - flash chip address.
+store_x	dta 0
+flashformatchip2
+	ldx #$40
+	dta { bit.w }
+flashformatchip
+
+	sei
+	stx store_x
+	sec ; format preamble
+	jsr flashoppreamble ; does not touch A
+	sta $d502,x
+	lda #$10
+	sta $b555
+	lda #$ff
+	sta flashcmp
+	jsr flashcheckresult
+	beq @+
+		; cart is off and cli
+;		sec ; error
+;		rts
+@	lda #$3f
+	sta flashformatcounter
+@	sei
+	ldx store_x
+flashformatcounter equ*+1
+	sta $d5FF,x ; set chip (x) and bank
+	; set pages count
+	ldy #$20
+	; reset address
+	lda #$a0
+	sta flashformataddrcheck + 2
+	; check whole sector against 0xff
+	jsr flashchecksectorformatted_bare ; destroys x
+	bcs @+ ; format error
+	dec flashformatcounter
+	bpl @-
+@	jmp flashcartoff ; preserves C
+
+	
+; --------------------------
+; PROCEDURE
+flashformatsector
+; x - even sector 00 - 7f
+; a - erase 4KB from $B000 if A=$B0, FROM $A000 IF A=$A0
+; format 4kb evensector 
+; strange form - easily maps to cartridge banks
+; to format bank, must format sector (x<<1) and (x<<1) +1
+	; first check if all ff
+	; this is to avoid wear
+	stx flashformatstorex
+	sta flashformatstorea
+	sei
+	sta $d500,x
+	sta flashformataddrcheck + 2
+	jsr flashchecksectorformatted	
+	bcc flashsectorformatgood
+	sei
+flashformatstorex	equ * + 1
+	ldx #0 ; filled before
+flashformatstorea	equ * + 1
+	lda #0 ; filled before
+; check least sector bit
+
+	sec ; format preamble
+	jsr flashoppreamble ; does not touch A,X
+	sta $D500,x
+	; A must be either $A0 or $B0
+	sta flashtmpaddr+1
+	sta flashformataddrcheck + 2
+
+	lda #$30
+flashtmpaddr	equ	*+1
+	sta $a000 ; Format!
+	jsr flashcheckresult
+	sei
+
+	lda flashformatstorea
+	sta flashformataddrcheck+2
+	
+	ldx flashformatstorex
+	sta $d500,x
+
+	; check if all data in sector is $ff
+flashchecksectorformatted
+	ldy #$10
+flashchecksectorformatted_bare
+	lda #$ff
+	ldx #0
+flashformataddrcheck
+	cmp $a000,x
+	bne flashsectorformaterror
+	inx
+	bne flashformataddrcheck
+	inc flashformataddrcheck + 2
+	dey
+	bne flashformataddrcheck
+	 
+flashsectorformatgood
+	jsr flashcartoff
+	clc
+	rts
+	
+flashsectorformaterror
+	jsr flashcartoff
+	sec
+	rts
+
+
+; ---------------------
+; PROCEDURE
+
+flashwritebyte
+
+; a - byte to write
+; x - 8kb bank to switch, $00 to $7f, also chip select
+; flashaddr - addres in flash - must be a000-offset
+	; do not programm byte if already good
+	sei	
+	sta $D500,x ; select bank, chip
+	ldy #{ cmp.w }
+	jsr flashprocessbyte
+	bne @+
+	 ;clc
+	 ;jmp flashcartoff
+	sta $D580
+	cli
+	clc
+	rts
+@	sta flashcmp
+
+	sei
+	clc ; write byte preamble
+	jsr flashoppreamble ; preserves A,X
+	
+	sta $D500,x
+	
+	ldy #{ sta.w }
+	; WRITE BYTE !
+	jsr flashprocessbyte
+
+flashcheckresult ; sei mode
+	mva #0 flashcnt
+	ldy #5 ; first time wait short first turn to speed up byte write.
+	bne @+
+
+flashwaitfordone
+	; approx 100ms in overall for chip erase:
+	; as many cycles needed, as 256*cycles >100ms * (1+epsilon)
+	; 100 ms is 180000 cycles
+	; so max 256 rough loops must last longer
+	; 180000 / 256 = 703
+	; 700 cycles by 6 cycles loop lasts = 116.
+	; so flipipng values, and adding margin,
+	; we count 128*6 cycles in inner loop.
+	; max sector erase by datasheet: 25 ms
+	; max chip erase by datasheet: 100 ms
+	ldy#250
+@	dey
+	nop
+	bne @-
+	
+@	ldy #{ lda.w }
+	jsr flashprocessbyte
+	ldy #{ eor.w }
+	jsr flashprocessbyte
+	inc flashcnt
+	bne @+
+		jsr flashcartoff
+		lda #$ff ; status
+		rts
+@
+	and #$40
+	bne flashwaitfordone
+; in acc will be mismatched byte
+	ldy #{ lda.w }
+	jsr flashprocessbyte
+	jsr flashcartoff ; preserves axy, not p
+flashcmp	equ *+1
+	cmp #0
+; when non zero = error
+	rts
+
+flashcnt
+	dta 0
+; ----------------------
+; PROCEDURE
+
+flashprocessbyte
+
+; y - byteop for cpu to do with byte 
+; flashaddr - stored address
+	sty flashbyteop
+flashaddr	equ *+1
+flashbyteop
+	sta $aaaa
+	rts
+
+flashincaddr
+	inw flashaddr
+	rts
+
+flashsetaddr
+	stx flashaddr
+	sty flashaddr+1
+	rts
+
+flashcartoff
+	pha
+	sta $d580
+	lda $d013
+	sta $3fa
+	cli
+	pla
+	rts
+
+; PROCEDURE
+; Y-char to write
+PRINTWHAT
+	php
+	pha
+	txa
+	pha
+	tya
+	pha
+	jsr $f2b0
+	pla
+	tay
+	pla
+	tax
+	pla
+	plp
+	rts
+PRINTDOT
+	php
+	pha
+	txa
+	pha
+	tya
+	pha
+	lda #'.'
+	jsr $f2b0
+	pla
+	tay
+	pla
+	tax
+	pla
+	plp
+	rts
+; ----------------------- IINT
+;	org $2e2
+;	dta a($600)
