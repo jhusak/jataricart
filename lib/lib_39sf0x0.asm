@@ -1,6 +1,9 @@
 TRIGGER_FORMAT_39SF equ $10
 C_FORMAT_39SF	equ $80
 C_BYTE_PROG_39SF	equ $a0
+M_SSIZE_39SF	equ $1000 ; sector size
+command_ZP	=	$f0
+
 flashoppreamble_39SF
 	pha
 	lda #C_BYTE_PROG_39SF

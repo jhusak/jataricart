@@ -1,16 +1,18 @@
 TRIGGER_FORMAT_28SF	equ $30
 C_FORMAT_28SF		equ $30
 C_BYTE_PROG_28SF	equ $10
-flashoppreamble
+M_SSIZE_28SF	equ $0100 ; sector size
+
+flashoppreamble_28SF
 	pha
 	lda #C_BYTE_PROG_28SF
 	scc
 	lda #C_FORMAT_28SF ; only if c set
-flashoppreamble_acc ; 28SF0x0
+flashoppreamble_acc_28SF ; 28SF0x0
 	sta $d500,x ; can be any address
 	sta $a000; command: FORMAT/ID_MODE/BYTE_PROG, any address
 	rts
-flash_unlockchip
+flash_unlockchip_28SF
 	sta $D500,x
 	; read from 1823H, 1820H, 1822H, 0418H, 041BH, 0419H, 041AH
 	lda $B823

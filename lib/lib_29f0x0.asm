@@ -1,6 +1,8 @@
 TRIGGER_FORMAT_29F equ $10
 C_FORMAT_29F	equ $80
 C_BYTE_PROG_29F	equ $a0
+M_SSIZE_29F	equ $10000 ; sector size; MAXFlash, protocol compatible with 39sf0x0
+command_ZP	=	$f0
 flashoppreamble_29F
 	pha
 	lda #C_BYTE_PROG_29F
