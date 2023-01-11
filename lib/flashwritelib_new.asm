@@ -2,28 +2,29 @@
 ; by JHusak , 04.01.2020
 ; free to use.
 
-; Nice to have procedures, because mads may exclude unused procedures (-x in cmdl)
-;.def STRIPPED
-
 	icl "lib_28sf0x0.asm"
 	icl "lib_29f0x0.asm"
 	icl "lib_29sf0x0.asm"
 	icl "lib_39sf0x0.asm"
 
-; x - 0x0 or 0x40 - chip select;
-; a - $80 - format, $90 - enter id mode, $a0 - writebyte
-C_ID_MODE equ $90
+; CONSTANTS
+m_offsets
+	softid_entry	=	0
+	softid_exit	=	3
+	flashoppreamble	=	6
+	flash_lockchip	=	9
+	flash_unlockchip	=	12
 
-M_SECTOR_SIZES
-	.word	M_SSIZE_28SF, M_SSIZE_29F, M_SSIZE_29SF, M_SSIZE_39SF
-M_PREAMBLE_VECS
-	.word flashoppreamble_28SF, flashoppreamble_29F, flashoppreamble_29SF, flashoppreamble_39SF
-M_PREAMBLES_ACC_VECS
-	.word flashoppreamble_acc_28SF, flashoppreamble_acc_29F, flashoppreamble_acc_29SF, flashoppreamble_acc_39SF
-M_UNLOCKMEM_VECS
-	.word flash_unlockchip_28SF, flash_unlockchip_29F, flash_unlockchip_29SF, flash_unlockchip_39SF
+; rw section, may be moved to ZP if needed
+M_VECTOR	.word 0
+tmpa		.byte 0
+m_vendor	.byte 0
+m_kind		.byte 0
+m_iter		.byte 0
 
+; ro section again
 
+M_CHECK_VECS	.word M_VECTORS_28SF, M_VECTORS_29F, M_VECTORS_29SF, M_VECTORS_39SF
 ;Problems with writing:
 ; - check flash presence
 ; - flash protocol
@@ -45,68 +46,78 @@ M_UNLOCKMEM_VECS
 ; c parameter as format/writebyte
 ; for compatibility, 5555_2aaa only
 
-.ifndef STRIPPED
-; flash size only needed in not stripped version for format result check.
-flash_size dta 0
-; as well as check_vendor procedure
-; 
 ; --------------------------
 ; PROCEDURE
 ; x = 0 or 0x40 - flash chip address.
-; returns c set -> failed
-; if c cleared, x=vendor, y=product code
-; there are some memories which need multiple read, but we do not abuse them.
-check_vendor
-	lda #C_ID_MODE
-	jsr flashoppreamble_acc
-	ldx $a000 ; vendor
-	ldy $a001 ; id
-	mva #$f0 $a000 ; exit read_id
-	mva #0 flash_size 
+; stores proper vector table pointer if worked
+; this fails only when somebody stores vendor and product bytes
+; at the proper cells.
+;
+; then in the code we call lda #offset/jsr jsrtoproc
+check_type
+	ldy #0-2
+?again
+	; store default values
+	sta $d500,x
+	lda $a000
+	sta m_vendor
+	lda $a001
+	sta m_kind
+	
+	iny
+	iny
+	sty m_iter
 
-	cpx #$BF; SST 
-	bne next1
-	; nice to store that this is SST
-	cpy #$B5
-	bne @+
-	lda #$0f
-@	cpy #$B6
-	bne @+
-	lda #$1f
-@	cpy #$B7
-	bne @+
-	lda #$3f
-@	sta flash_size
-	clc
-	rts
-next1
-.if 0
-	lda #C_ID_MODE
-	jsr flashoppreamble_acc
-	ldx $a000 ; vendor
-	ldy $a001 ; id
-	mva #$f0 $a000 ; exit read_id
-	mva #0 flash_size 
+	jsr jsrtosoftidentry
 
-	cpx #$BF; SST 
-	bne cvexit
-	; nice to store that this is SST
-	cpy #$24
-	bne @+
-	lda #$1f
-@	cpy #$13
-	bne @+
-	lda #$3f
-@	sta flash_size
-	clc
-	rts
-.endif
-cvexit
+	sta $d500,x
+	lda $a000 ; vendor
+	cmp m_vendor
+	bne OK
+	lda $a001 ; id
+	cmp m_kind
+	bne ?OK
+
+	ldy	m_iter
+	cpy	#$6
+	bne	?again
+	; error
 	sec
 	rts
-.endif
+?OK
+	lda	M_CHECK_VECS+1,y
+	sta	M_VECTORS+1
+	lda	M_CHECK_VECS,y
+	sta	M_VECTORS
 
+	lda	#softid_exit
+	jsr	jsrtoproc
+	clc
+	rts
 
+jsrtosoftidentry
+	lda M_CHECK_VECS+1,y ; first is softid entry
+	pha
+	lda M_CHECK_VECS,y ; first is softid entry
+	pha
+	php
+	rti ; jsr to tabled func
+; PROCEDURE
+; performs jump to vector table at offset in A provided
+; y passed to the procedure called
+jsrtoproc
+	php ; preserve C
+	clc
+	adc	M_VECTORS
+	sta	tmpa
+	lda	M_VECTORS+1
+	adc	#0
+	plp ; restore C
+	pha
+	lda	tmpa
+	pha
+	php
+	rti
 
 ; --------------------------
 flashformatchip2
@@ -124,6 +135,7 @@ flashformatchip
 	lda #C_FORMAT
 	jsr flashoppreamble_acc ; does not touch A
 	sta $d502,x
+	; !!!!!!!!!!!!!!!!!!! CHECK THIS !!!!!!!!!!!!!!!!!!!!
 	lda #TRIGGER_FORMAT
 	sta $b555 ; FORMAT HERE TRIGGERED!
 	; not needed to mva $ff flashcmp

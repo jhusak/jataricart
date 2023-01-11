@@ -4,6 +4,13 @@ C_BYTE_PROG_39SF	equ $a0
 M_SSIZE_39SF	equ $1000 ; sector size
 command_ZP	=	$f0
 
+M_VECTORS_39SF
+	jmp softid_entry_39SF
+	jmp softid_exit_39SF
+	jmp flashoppreamble_39SF
+	jmp flash_lockchip_39SF
+	jmp flash_unlockchip_39SF
+
 flashoppreamble_39SF
 	pha
 	lda #C_BYTE_PROG_39SF
@@ -37,3 +44,25 @@ flashoppreamble_acc_39SF ; 39sf0x0, 29F040
 	tax
 flash_unlockchip_39SF
 	rts
+
+;read_manufacturer_39SF
+;	sta D500,x ; x=0 or $40 else will read wrong
+;	lda $a000
+;	rts
+
+;read_product_39SF
+;	sta D500,x ; x=0 or $40 else will read wrong
+;	lda $a001
+;	rts
+
+softid_exit_39SF
+	sta D500,x ; x=0 or $40 else will read wrong
+	lda #$f0
+	sta $a000
+	rts
+
+
+softid_entry_39SF
+	lda #$90
+	bne flashoppreamble_acc_39SF
+
