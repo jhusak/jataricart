@@ -14,6 +14,7 @@ m_offsets
 	flashoppreamble	=	6
 	flash_lockchip	=	9
 	flash_unlockchip	=	12
+	flash_idstr	=	15
 
 ; rw section, may be moved to ZP if needed
 M_VECTOR	.word 0

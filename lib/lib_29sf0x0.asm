@@ -9,6 +9,7 @@ M_VECTORS_29SF
 	jmp flashoppreamble_29SF
 	jmp flash_lockchip_29SF
 	jmp flash_unlockchip_29SF
+	.byte "29SF0x0",0
 
 flashoppreamble_29SF
 	pha

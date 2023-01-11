@@ -9,6 +9,7 @@ M_VECTORS_28SF
 	jmp flashoppreamble_28SF
 	jmp flash_lockchip_28SF
 	jmp flash_unlockchip_28SF
+	.byte "28SF0x0",0
 
 flashoppreamble_28SF
 	lda #C_BYTE_PROG_28SF
