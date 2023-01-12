@@ -4,8 +4,8 @@
 
 	icl "lib_28sf0x0.asm"
 	icl "lib_29f0x0.asm"
-	icl "lib_29sf0x0.asm"
 	icl "lib_39sf0x0.asm"
+num_mems	=	3
 
 ; CONSTANTS
 m_offsets
@@ -24,29 +24,36 @@ m_kind		.byte 0
 m_iter		.byte 0
 
 ; ro section again
+; Protocols for known kinds of memory:
+; 28sf0x0 protokol unlock/write
+; 39sf0x0 protokol 5555/AA;2aaa/55
+; 29f0x0  protokol 555/AA;2aa/55
+; Working scan order; scanning from the end; 
+M_CHECK_VECS	.word M_VECTORS_29F, M_VECTORS_39SF, M_VECTORS_28SF
 
-M_CHECK_VECS	.word M_VECTORS_28SF, M_VECTORS_29F, M_VECTORS_29SF, M_VECTORS_39SF
-;Problems with writing:
+; --------------------------------------------------------------------
+;Problems to solve with writing:
 ; - check flash presence
 ; - flash protocol
 ; - size of flash 1,2
 ; - size of sector in some cases
 ; - number of flashes (easy, they do not overlap)
-; All can be read by erasing memory, writing several bytes and reading them
-; For flash recognition
+; All can be read by erasing memory, writing several bytes and reading them;
+; But we will rely rather on user's choice not to wear memory
+
+; First detection is to read raw memory and id and compare results. However, we do not want to keep all those ids to recognise.
+; Second detection is to compare contents. But not very reliable as contents may repeat.
+; And ome issues may occur when no memory inserted.
+; Eventually, for flash recognition
 ; - format,
-; - write 128 kbytes, read more -> if not ff, flash is 128k
-; - write additional 128KB, read more ->if not ff flash is 256kB, else is 512kb
+; - write 128k-1 byte, read 2*128k-1 -> if not ff flash is 128k
+; - write 256k-1 byte, read 2*256k-1 -> if not ff flash is 256kB, else is 512kb
 ; 
-; First detection is to read raw memory and id and compare results. Some issues may occur when no memory inserted.
 
-;flash_detect_protocol:
-;	lda #ID_MODE
-;	jsr flashoppreamble_5555_2aaa
+; ??? c parameter as format/writebyte
+; ??? for compatibility, 5555_2aaa only
 
-; c parameter as format/writebyte
-; for compatibility, 5555_2aaa only
-
+; ------------------------------------------------------------------------
 ; --------------------------
 ; PROCEDURE
 ; x = 0 or 0x40 - flash chip address.
@@ -54,10 +61,11 @@ M_CHECK_VECS	.word M_VECTORS_28SF, M_VECTORS_29F, M_VECTORS_29SF, M_VECTORS_39SF
 ; this fails only when somebody stores vendor and product bytes
 ; at the proper cells.
 ;
-; then in the code we call lda #offset/jsr jsrtoproc
+; then in the code we call lda #offset/jsr jsrtovetorproc
 check_type
-	ldy #0-2
+	ldy #(2*(num_mems-1))
 ?again
+	sty m_iter
 	; store default values
 	sta $d500,x
 	lda $a000
@@ -65,34 +73,34 @@ check_type
 	lda $a001
 	sta m_kind
 	
-	iny
-	iny
-	sty m_iter
-
 	jsr jsrtosoftidentry
 
 	sta $d500,x
 	lda $a000 ; vendor
 	cmp m_vendor
-	bne OK
+	sta m_vendor
+	beq ?next
 	lda $a001 ; id
 	cmp m_kind
+	sta m_kind
+	beq ?next
 	bne ?OK
-
+?next
 	ldy	m_iter
-	cpy	#$6
-	bne	?again
+	dey
+	dey
+	bpl	?again
 	; error
 	sec
 	rts
 ?OK
 	lda	M_CHECK_VECS+1,y
-	sta	M_VECTORS+1
+	sta	M_VECTOR+1
 	lda	M_CHECK_VECS,y
-	sta	M_VECTORS
+	sta	M_VECTOR
 
 	lda	#softid_exit
-	jsr	jsrtoproc
+	jsr	jsrtovetorproc
 	clc
 	rts
 
@@ -106,12 +114,12 @@ jsrtosoftidentry
 ; PROCEDURE
 ; performs jump to vector table at offset in A provided
 ; y passed to the procedure called
-jsrtoproc
+jsrtovetorproc
 	php ; preserve C
 	clc
-	adc	M_VECTORS
+	adc	M_VECTOR
 	sta	tmpa
-	lda	M_VECTORS+1
+	lda	M_VECTOR+1
 	adc	#0
 	plp ; restore C
 	pha
@@ -133,12 +141,14 @@ flashformatchip
 
 	sei
 	stx store_x
-	lda #C_FORMAT
-	jsr flashoppreamble_acc ; does not touch A
-	sta $d502,x
+	; lda #C_FORMAT
+	sec
+	lda #flashoppreamble
+	jsr jsrtovetorproc ; does not touch A
+	;sta $d502,x
 	; !!!!!!!!!!!!!!!!!!! CHECK THIS !!!!!!!!!!!!!!!!!!!!
-	lda #TRIGGER_FORMAT
-	sta $b555 ; FORMAT HERE TRIGGERED!
+	;lda #TRIGGER_FORMAT
+	;sta $b555 ; FORMAT HERE TRIGGERED!
 	; not needed to mva $ff flashcmp
 	jsr wait4flashcheckresult ; waits for format finished
 	; then check number of banks for FFs
@@ -185,9 +195,9 @@ flashformatsector
 flashformatstorex	equ * + 1
 	ldx #0 ; filled before
 ; check least sector bit
-
-	lda #C_FORMAT
-	jsr flashoppreamble_acc ; does not touch A,X
+	sec
+	lda #flashoppreamble ; does not touch A,X
+	jsr jsrtovetorproc
 	sta $D500,x
 	; A must be either $A0 or $B0
 flashformatstorea	equ * + 1
@@ -255,8 +265,9 @@ byte_differs
 	sta flashcmp
 	sei
 	pha
-	lda #C_BYTE_PROG
-	jsr flashoppreamble_acc ; preserves A,X
+	clc ; byte preamble
+	lda #flashoppreamble ; preserves A,X
+	jsr jsrtovetorproc
 	pla
 	; set right bank
 	sta $D500,x

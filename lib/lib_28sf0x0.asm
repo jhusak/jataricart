@@ -9,11 +9,12 @@ M_VECTORS_28SF
 	jmp flashoppreamble_28SF
 	jmp flash_lockchip_28SF
 	jmp flash_unlockchip_28SF
-	.byte "28SF0x0",0
+	dta c'28SF0x0',0
 
 flashoppreamble_28SF
 	lda #C_BYTE_PROG_28SF
 	bcc flashoppreamble_acc_28SF
+	jsr flash_unlockchip_28SF
 	lda #C_FORMAT_28SF ; only if c set
 	sta $d500,x ; can be any address
 	sta $a000; command select: FORMAT/ID_MODE/BYTE_PROG, any address
@@ -23,16 +24,15 @@ flashoppreamble_acc_28SF ; 28SF0x0
 	sta $d500,x
 	sta $a000
 	rts
-read_manufacturer_28SF
-	sta D500,x ; x=0 or $40 else will read wrong
-	lda $a000
-	rts
-read_product_28SF
-	sta D500,x ; x=0 or $40 else will read wrong
-	lda $a001
-	rts
+;read_manufacturer_28SF
+;	sta $D500,x ; x=0 or $40 else will read wrong
+;	lda $a000
+;	rts
+;read_product_28SF
+;	sta $D500,x ; x=0 or $40 else will read wrong
+;	lda $a001
+;	rts
 
-softid_entry_28SF
 flash_unlockchip_28SF
 	sta $D500,x ; x =0 or $40, else will not unlock
 	; read from 1823H, 1820H, 1822H, 0418H, 041BH, 0419H, 041AH
@@ -40,7 +40,13 @@ flash_unlockchip_28SF
 	lda	$A41A
 	rts
 
-softid_xit_28SF
+softid_entry_28SF
+	sta $d500,x
+	lda #$90
+	sta $a000
+	rts
+
+softid_exit_28SF
 flash_lockchip_28SF
 	sta $D500,x ; x =0 or $40, else will not unlock
 	jsr flash_lock_preamb_28SF
