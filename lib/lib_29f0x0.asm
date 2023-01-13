@@ -27,20 +27,17 @@ flashoppreamble_acc_29F ; 29F040
 	; when write byte x must be set to either 0 or 40 temporarily
 	and #$40
 	tax
-	sta $d502,x
-	mva #$aa $b555 ; $5555<$aa
-	sta $d501,x
-	mva #$55 $aaaa ; $2aaa<$55
-	; $5555<$80
-	sta $d502,x
-	mva command_ZP_29F $b555; will become command: FORMAT/ID_MODE/BYTE_PROG
+	sta $d500,x
+	mva #$aa $a555 ; $555<$aa
+	mva #$55 $a2aa ; $2aa<$55
+	; $555<$80
+	mva command_ZP_29F $a555; will become command: FORMAT/ID_MODE/BYTE_PROG
 	cmp #C_FORMAT_29F
 	bne @+ ; if not FORMAT, procedure finishes
 	; FORMAT part, more to write
-	sta $d502,x
-	mva #$aa $b555 ; $5555<$aa
-	sta $d501,x
-	mva #$55 $aaaa ; $2aaa<$55
+	mva #$aa $a555 ; $555<$aa
+	mva #$55 $a2aa ; $2aa<$55
+	mva #TRIGGER_FORMAT_29F $a555 ; $555<$10
 @	pla
 	tax
 flash_lockchip_29F
