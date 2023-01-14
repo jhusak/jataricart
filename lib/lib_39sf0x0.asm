@@ -10,6 +10,7 @@ M_VECTORS_39SF
 	jmp flashoppreamble_39SF
 	jmp flash_lockchip_39SF
 	jmp flash_unlockchip_39SF
+	jmp flash_wait_unit_29F
 	dta c'39SF0x0',0
 
 flashoppreamble_39SF
@@ -47,6 +48,7 @@ flashoppreamble_acc_39SF ; 39sf0x0, 29F040
 	tax
 flash_lockchip_39SF
 flash_unlockchip_39SF
+flash_wait_unit_39SF
 	rts
 
 ;read_manufacturer_39SF

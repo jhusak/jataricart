@@ -14,7 +14,8 @@ m_offsets
 	flashoppreamble	=	6
 	flash_lockchip	=	9
 	flash_unlockchip	=	12
-	flash_idstr	=	15
+	flash_wait_unit	=	15
+	flash_idstr	=	18
 
 ; rw section, may be moved to ZP if needed
 M_VECTOR	.word 0
@@ -29,7 +30,7 @@ m_iter		.byte 0
 ; 39sf0x0 protokol 5555/AA;2aaa/55
 ; 29f0x0  protokol 555/AA;2aa/55
 ; Working scan order; scanning from the end; 
-M_CHECK_VECS	.word M_VECTORS_29F, M_VECTORS_39SF, M_VECTORS_28SF
+M_CHECK_VECS	.word  M_VECTORS_39SF, M_VECTORS_29F, M_VECTORS_28SF
 
 ; --------------------------------------------------------------------
 ;Problems to solve with writing:
@@ -61,13 +62,13 @@ M_CHECK_VECS	.word M_VECTORS_29F, M_VECTORS_39SF, M_VECTORS_28SF
 ; this fails only when somebody stores vendor and product bytes
 ; at the proper cells.
 ;
-; then in the code we call lda #offset/jsr jsrtovetorproc
+; then in the code we call lda #offset/jsr jsrtovectorproc
 check_type
 	ldy #(2*(num_mems-1))
 ?again
 	sty m_iter
 	; store default values
-	sta $d500,x
+	jsr flashsetbank
 	lda $a000
 	sta m_vendor
 	lda $a001
@@ -75,7 +76,7 @@ check_type
 	
 	jsr jsrtosoftidentry
 
-	sta $d500,x
+	jsr flashsetbank
 	lda $a000 ; vendor
 	cmp m_vendor
 	sta m_vendor
@@ -99,22 +100,26 @@ check_type
 	lda	M_CHECK_VECS,y
 	sta	M_VECTOR
 
+jsrtosoftidexit
 	lda	#softid_exit
-	jsr	jsrtovetorproc
+	jsr	jsrtovectorproc
+	lda $d013
+	sta $3fa
 	clc
 	rts
 
 jsrtosoftidentry
-	lda M_CHECK_VECS+1,y ; first is softid entry
-	pha
-	lda M_CHECK_VECS,y ; first is softid entry
-	pha
-	php
-	rti ; jsr to tabled func
+       lda M_CHECK_VECS+1,y ; first is softid entry
+       pha
+       lda M_CHECK_VECS,y ; first is softid entry
+       pha
+       php
+       rti ; jsr to tabled func
+
 ; PROCEDURE
 ; performs jump to vector table at offset in A provided
 ; y passed to the procedure called
-jsrtovetorproc
+jsrtovectorproc
 	php ; preserve C
 	clc
 	adc	M_VECTOR
@@ -141,14 +146,9 @@ flashformatchip
 
 	sei
 	stx store_x
-	; lda #C_FORMAT
-	sec
+	sec ; will format flash!
 	lda #flashoppreamble
-	jsr jsrtovetorproc ; does not touch A
-	;sta $d502,x
-	; !!!!!!!!!!!!!!!!!!! CHECK THIS !!!!!!!!!!!!!!!!!!!!
-	;lda #TRIGGER_FORMAT
-	;sta $b555 ; FORMAT HERE TRIGGERED!
+	jsr jsrtovectorproc ; preserves A
 	; not needed to mva $ff flashcmp
 	jsr wait4flashcheckresult ; waits for format finished
 	; then check number of banks for FFs
@@ -186,7 +186,7 @@ flashformatsector
 	stx flashformatstorex
 	sta flashformatstorea
 	sei
-	sta $d500,x
+	jsr flashsetbank
 	; store #$a0 or #$b0
 	sta flashformataddrcheck + 2
 	jsr flashchecksectorformatted	
@@ -197,7 +197,7 @@ flashformatstorex	equ * + 1
 ; check least sector bit
 	sec
 	lda #flashoppreamble ; does not touch A,X
-	jsr jsrtovetorproc
+	jsr jsrtovectorproc
 	sta $D500,x
 	; A must be either $A0 or $B0
 flashformatstorea	equ * + 1
@@ -215,7 +215,7 @@ flashtmpaddr	equ	*+1
 	sta flashformataddrcheck+2
 	
 	ldx flashformatstorex
-	sta $d500,x
+	jsr flashsetbank
 
 	; check if all data in sector is $ff
 flashchecksectorformatted
@@ -231,7 +231,7 @@ flashformataddrcheck
 	inc flashformataddrcheck + 2
 	dey
 	bne flashformataddrcheck
-	 
+
 flashsectorformatgood
 	jsr flashcartoff
 	clc
@@ -265,9 +265,9 @@ byte_differs
 	sta flashcmp
 	sei
 	pha
-	clc ; byte preamble
+	clc ; byte program preamble
 	lda #flashoppreamble ; preserves A,X
-	jsr jsrtovetorproc
+	jsr jsrtovectorproc
 	pla
 	; set right bank
 	sta $D500,x
@@ -276,10 +276,12 @@ byte_differs
 
 wait4flashcheckresult ; sei mode
 	mva #0 flashcnt
+	sta flashcnt+1
 	ldy #1 ; first time wait short first turn to speed up byte write.
 	bne @+
 
 flashwaitfordone
+	; WARNING! 29f040 erases even 10 seconds!
 	; approx 100ms in overall for chip erase:
 	; as many cycles needed, as 256*cycles >100ms * (1+epsilon)
 	; 100 ms is 180000 cycles
@@ -289,26 +291,38 @@ flashwaitfordone
 	; so flipipng values, and adding margin,
 	; we count 128*6 cycles in inner loop.
 	; max sector erase by datasheet: 25 ms
-	; max chip erase by datasheet: 100 ms
+	; max chip erase by datasheet: 100 ms 39sf040
+	; max chip erase by datasheet: 20 ms 28sf040
+	; max chip erase by datasheet: 10000 ms 29f040
+
 	ldy#250
-@	dey
-	nop
+@	
+	;lda #flash_wait_unit
+	;jsr jsrtovectorproc
+	inc colbaks
+	lda colbaks
+	sta colbak
+	dey
 	bne @-
 	
-@	ldy #{ lda.w }
+@	
+
+	ldy #{ lda.w }
 	jsr flashprocessbyte
 	sta flashval
 	ldy #{ eor.w }
 	jsr flashprocessbyte
 	inc flashcnt
 	bne @+
-		sta $d580
+	inc flashcnt+1
+	bne @+
+		jsr flashcartoff
 		lda #$ff ; status
 		rts
 @
 	and #$40
 	bne flashwaitfordone
-	sta $d580
+	jsr flashcartoff
 flashval	equ *+1
 	lda #0
 flashcmp	equ *+1
@@ -317,7 +331,7 @@ flashcmp	equ *+1
 	rts
 
 flashcnt
-	dta 0
+	dta 0,0
 ; ----------------------
 ; PROCEDURE
 
@@ -338,6 +352,12 @@ flashincaddr
 flashsetaddr
 	stx flashaddr
 	sty flashaddr+1
+	rts
+
+flashsetbank
+	sta $d500,x
+	lda $d013
+	sta $3fa
 	rts
 
 flashcartoff

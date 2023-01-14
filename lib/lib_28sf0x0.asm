@@ -1,7 +1,6 @@
 C_FORMAT_28SF		equ $30
 C_BYTE_PROG_28SF	equ $10
 M_SSIZE_28SF	equ $0100 ; sector size
-;	store 
 ;
 M_VECTORS_28SF
 	jmp softid_entry_28SF
@@ -9,6 +8,7 @@ M_VECTORS_28SF
 	jmp flashoppreamble_28SF
 	jmp flash_lockchip_28SF
 	jmp flash_unlockchip_28SF
+	jmp flash_wait_unit_28SF
 	dta c'28SF0x0',0
 
 flashoppreamble_28SF
@@ -23,6 +23,7 @@ flashoppreamble_28SF
 flashoppreamble_acc_28SF ; 28SF0x0
 	sta $d500,x
 	sta $a000
+flash_wait_unit_28SF
 	rts
 ;read_manufacturer_28SF
 ;	sta $D500,x ; x=0 or $40 else will read wrong
@@ -41,12 +42,15 @@ flash_unlockchip_28SF
 	rts
 
 softid_entry_28SF
-	sta $d500,x
 	lda #$90
 	sta $a000
 	rts
 
 softid_exit_28SF
+	lda #$ff
+	sta $a000
+	rts
+	
 flash_lockchip_28SF
 	sta $D500,x ; x =0 or $40, else will not unlock
 	jsr flash_lock_preamb_28SF

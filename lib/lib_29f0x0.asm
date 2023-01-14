@@ -10,6 +10,7 @@ M_VECTORS_29F
 	jmp flashoppreamble_29F
 	jmp flash_lockchip_29F
 	jmp flash_unlockchip_29F
+	jmp flash_wait_unit_29F
 	dta c'29F0x0',0
 
 flashoppreamble_29F
@@ -30,7 +31,7 @@ flashoppreamble_acc_29F ; 29F040
 	sta $d500,x
 	mva #$aa $a555 ; $555<$aa
 	mva #$55 $a2aa ; $2aa<$55
-	; $555<$80
+	; $555<$80 or $A0
 	mva command_ZP_29F $a555; will become command: FORMAT/ID_MODE/BYTE_PROG
 	cmp #C_FORMAT_29F
 	bne @+ ; if not FORMAT, procedure finishes
@@ -42,6 +43,17 @@ flashoppreamble_acc_29F ; 29F040
 	tax
 flash_lockchip_29F
 flash_unlockchip_29F
+	rts
+
+flash_wait_unit_29F
+	bit VCOUNT
+	bmi *-3
+	bit VCOUNT
+	bpl *-3
+	bit VCOUNT
+	bmi *-3
+	bit VCOUNT
+	bpl *-3
 	rts
 
 ;read_manufacturer_29F
