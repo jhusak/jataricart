@@ -1,4 +1,4 @@
-; JatariCart256 Action!3.6 flasher
+; JatariCart256 flasher
 ; by Jakub Husak , 04.01.2020
 ; All Rights Reserved.
 ;
@@ -16,8 +16,13 @@
 ; along with JatariCart256.  If not, see <http://www.gnu.org/licenses/>.
 ;
 	icl '../../lib/atari.hea'
+; flash image is included at the end of file
 ; uncomment when flashing all cart or want to check all blocks written so far.
 ;.def compareall
+.if .not .def CUSTOM_CART_LAYOUT
+	.define CUSTOM_CART_LAYOUT
+.endif
+
 BankNum	equ	$88
 Counter	equ	$89
 operation	equ $8a
@@ -33,6 +38,7 @@ _DEST	equ	$A000
 
 ; test code
 	org $2000
+STARTFLASHWRITE
 	mva #$A0 106
 	jsr opened
 	lda 20
@@ -42,11 +48,32 @@ _DEST	equ	$A000
 	sta 66
 	; waiting for cart to be inserted
 	jsr print
-	dta c'Insert cartridge...',0
+	TITLE+128
+	dta $9b,c'JatariCart/MaxFlash flasher'
+	dta $9b
+	dta c'by JHusak, I.2023'
+	dta $9b
+	dta c'JatariCart of size '
+	CARTSIZE+128
+	dta c' kB needed',$9b,$9b
+	dta c'Insert JatariCart of '
+	CARTSIZE+128
+	dta c' kB...',0
+
 	sta $D500
-@	lda $D013
+?wloop	lda $D013
 	lsr
-	bcc @-
+	bcc ?wloop
+
+	ldx #$25
+?lloop
+	bit VCOUNT
+	bmi *-3
+	bit VCOUNT
+	bpl *-3
+	dex
+	bne ?lloop
+
 	jsr print
 	dta c' inserted.',$9b,0
 	
@@ -54,32 +81,105 @@ _DEST	equ	$A000
 	lda $d013
 	sta $3fa
 
+	ldx #0 ; chip address
+	stx numchips
+_check_chips
+	stx _storex
+	jsr check_type
+	bcc ?_next
+	jsr print
+	dta c'unrecognized chip: ',0
+	lda m_vendor
+	jsr printhex
+	lda m_kind
+	jsr printhex
+	cpx #$0
+	seq
+		jmp *
+	jsr print
+	dta c'ignoring chip ...',0
+	jmp menu
+?_next	inc numchips
+	lda numchips
+	clc
+	adc #$30
+	sta chipno
+
+	jsr print
+	dta c'chip '
+chipno
+	dta c'0'
+	dta c' vend/prod: ',0
+	lda m_vendor
+	jsr printhex
+	lda m_kind
+	jsr printhex
+	jsr print
+	dta c' code: ',0
+
+	; print memory type
+	lda M_VECTOR
+	clc
+	adc #flash_idstr ; will print flashmem text id
+	sta ?taddr
+	lda M_VECTOR+1
+	adc #0
+	sta ?taddr+1
+	ldy #0
+?loop	; write string onscreen till 0
+	lda ?taddr:$ffff,y
+	beq ?exit
+	sty st_y
+	jsr outchar
+	ldy st_y:#0
+	iny
+	bne ?loop
+?exit
+	jsr printnl
+	ldx _storex
+	cpx #0
+	bne menu
+	lda m_vendor
+	sta t_vendor
+	lda m_kind
+	sta t_kind
+	ldx #$40
+	jmp _check_chips
+menu
+	jsr printnl
 	;lda #$ff
 	;sta $d301
 	
 	jsr print
 	dta c'Press:',$9b
 	dta c'START  - format cart and programm',$9b
-	dta c'SELECT - verify; repair bad blocks.',$9b
-	dta c'OPTION - verify only',$9b,0
-@	lda 53279
+	;dta c'SELECT - verify; repair bad blocks.',$9b
+	dta c'OPTION - verify',$9b,0
+?wloop	lda 53279
 	cmp #7
-	beq @-
+	beq ?wloop
 	sta operation
 
 	cmp #select
-	beq VERIFYREPAIR
+	beq ?wloop
 
 	cmp #option
-	beq CHECKONLY
+	jeq CHECKONLY
+
+	cmp #start
+	beq FORMAT
+	bne ?wloop
+
 	; start
-FORMAT  
+FORMAT
 	jsr printformatting
 	jsr print
 	dta c'1...',0
 	ldx #0
 	jsr flashformatchip
 	bcs formatfailed
+	jsr flashend ; restores display etc.
+	.if .def TWOCHIPS
 	jsr printdone
 	jsr printformatting
 	jsr print
@@ -87,6 +187,8 @@ FORMAT
 	ldx #$40
 	jsr flashformatchip
 	bcs formatfailed
+	jsr flashend ; restores display etc.
+	.endif
 printdone	jsr print
 	dta c'done:)',$9b,0
 	rts
@@ -107,6 +209,12 @@ CHECKONLY
 	jsr print
 	dta c'Compare.',$9b,0
 	rts
+
+t_vendor	.byte 0
+t_kind		.byte 0
+numchips	.byte 0
+_storex		.byte 0
+
 crcsums
 	:128 dta 0,0
 opened	
@@ -302,7 +410,7 @@ _cmpaddr	equ * + 1
 	lda #$ff
 	cmp _writeaddr+1
 	bne formatted_next2
-	
+	jsr flashend
 	jmp COMPARE_CRC16_DEST_ALL
 
 FINISH_PROCESS
@@ -354,10 +462,10 @@ badcompare_tmp2 equ 	* +1
 	;jmp *
 	icl '../../lib/print2.asx'
 	org $2e2
-	dta a($2000)
+	dta a(STARTFLASHWRITE)
 ; ---------------------------------------
 ; blocks for every 8kb bank
-.rept 128, #
+.rept BANKS, #
         .print "A :1"
         .local block:1
 ;------------
@@ -366,7 +474,7 @@ badcompare_tmp2 equ 	* +1
         dta b(1) ; Counter
 ;------------
         org _SOURCE
-        ins "Space Harrier (2011-07-05)(Hutt, Chris)(GB)[f for older cartridges Tucker, Steve 2011-07-23][!].bin",+:1*8192,8192
+	MACRO_FILE(:1)
 ;------------
         org $2e2
         dta a(MAIN_PROCESS)
@@ -374,6 +482,7 @@ badcompare_tmp2 equ 	* +1
         .endl
  .endr
 ;------------
+	CUSTOM_CART_LAYOUT
         org $2e2
         dta a(FINISH_PROCESS)
 
