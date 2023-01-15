@@ -2,217 +2,138 @@
 ; by JHusak , 04.01.2020
 ; free to use.
 
-; Nice to have procedures, because mads may exclude unused procedures (-x in cmdl)
-;.def STRIPPED
+FRAME_FEEDBACK=1
 
-;.def FLASH_INCLUDE_ALL 
-;FLASH_TYPE equ M_TYPE_28SF
-;FLASH_TYPE equ M_TYPE_29SF
-FLASH_TYPE equ M_TYPE_39SF
-;FLASH_TYPE equ M_TYPE_29F
+	icl "lib_28sf0x0.asm"
+	icl "lib_29f0x0.asm"
+	icl "lib_39sf0x0.asm"
+num_mems	=	3
 
-; x - 0x0 or 0x40 - chip select;
-; a - $80 - format, $90 - enter id mode, $a0 - writebyte
-C_ID_MODE equ $90
+; CONSTANTS
+m_offsets
+	softid_entry	=	0
+	softid_exit	=	3
+	flashoppreamble	=	6
+	flash_lockchip	=	9
+	flash_unlockchip	=	12
+	flash_wait_unit	=	15
+	flash_idstr	=	18
 
-M_TYPE_28SF	equ $88
-M_TYPE_29SF	equ $89
-M_TYPE_39SF	equ $99	
-M_TYPE_29F	equ $09 ; used in MaxFlash BM29F040
+; rw section, may be moved to ZP if needed
+M_VECTOR	.word 0
+tmpa		.byte 0
+m_vendor	.byte 0
+m_kind		.byte 0
+m_iter		.byte 0
 
-M_SSIZE_28SF	equ $0100 ; sector size
-M_SSIZE_29SF	equ $0080 ; sector size
-M_SSIZE_39SF	equ $1000 ; sector size
-M_SSIZE_29F	equ $10000 ; sector size; MAXFlash, protocol compatible with 39sf0x0
-;Problems with writing:
+; ro section again
+; Protocols for known kinds of memory:
+; 28sf0x0 protokol unlock/write
+; 39sf0x0 protokol 5555/AA;2aaa/55
+; 29f0x0  protokol 555/AA;2aa/55
+; Working scan order; scanning from the end; 
+M_CHECK_VECS	.word  M_VECTORS_39SF, M_VECTORS_29F, M_VECTORS_28SF
+
+; --------------------------------------------------------------------
+;Problems to solve with writing:
 ; - check flash presence
 ; - flash protocol
 ; - size of flash 1,2
 ; - size of sector in some cases
 ; - number of flashes (easy, they do not overlap)
-; All can be read by erasing memory, writing several bytes and reading them
-; For flash recognition
+; All can be read by erasing memory, writing several bytes and reading them;
+; But we will rely rather on user's choice not to wear memory
+
+; First detection is to read raw memory and id and compare results. However, we do not want to keep all those ids to recognise.
+; Second detection is to compare contents. But not very reliable as contents may repeat.
+; And ome issues may occur when no memory inserted.
+; Eventually, for flash recognition
 ; - format,
-; - write 128 kbytes, read more -> if not ff, flash is 128k
-; - write additional 128KB, read more ->if not ff flash is 256kB, else is 512kb
+; - write 128k-1 byte, read 2*128k-1 -> if not ff flash is 128k
+; - write 256k-1 byte, read 2*256k-1 -> if not ff flash is 256kB, else is 512kb
 ; 
-; First detection is to read raw memory and id and compare results. Some issues may occur when no memory inserted.
 
-;flash_detect_protocol:
-;	lda #ID_MODE
-;	jsr flashoppreamble_5555_2aaa
+; ??? c parameter as format/writebyte
+; ??? for compatibility, 5555_2aaa only
 
-; c parameter as format/writebyte
-; for compatibility, 5555_2aaa only
-
-.IF (FLASH_TYPE = M_TYPE_39SF) .or .def FLASH_INCLUDE_ALL
-TRIGGER_FORMAT equ $10
-C_FORMAT	equ $80
-C_BYTE_PROG	equ $a0
-flashoppreamble
-	pha
-	lda #C_BYTE_PROG
-	scc
-	lda #C_FORMAT ; only if c set
-	sta command
-	pla
-	jmp @+
-flashoppreamble_acc ; 39sf0x0, 29F040
-	sta command
-@	txa
-	pha
-	; when write byte x must be set to either 0 or 40 temporarily
-	and #$40
-	tax
-	sta $d502,x
-	mva #$aa $b555 ; $5555<$aa
-	sta $d501,x
-	mva #$55 $aaaa ; $2aaa<$55
-	; $5555<$80
-	sta $d502,x
-command	equ *+1
-	mva #$ff $b555; will become command: FORMAT/ID_MODE/BYTE_PROG
-	cmp #C_FORMAT
-	bne @+ ; if not FORMAT, procedure finishes
-	; FORMAT part, more to write
-	sta $d502,x
-	mva #$aa $b555 ; $5555<$aa
-	sta $d501,x
-	mva #$55 $aaaa ; $2aaa<$55
-@	pla
-	tax
-	rts
-.endif
-.if (FLASH_TYPE=M_TYPE_29SF) .or .def FLASH_INCLUDE_ALL
-TRIGGER_FORMAT equ $10
-C_FORMAT	equ $80
-C_BYTE_PROG	equ $a0
-flashoppreamble
-	pha
-	lda #C_BYTE_PROG
-	scc
-	lda #C_FORMAT ; only if c set
-	sta command
-	pla
-	jmp @+
-flashoppreamble_acc ; 29sf040
-	sta command
-@	txa
-	pha
-	; when write byte x must be set to either 0 or 40 temporarily
-	and #$40
-	tax
-	sta $d500,x
-	mva #$aa $a555 ; $555<$aa
-	mva #$55 $a2aa ; $2aa<$55
-	; $555<command
-command	equ *+1
-	mva #$ff $a555; will become command: FORMAT/ID_MODE/BYTE_PROG
-	cmp #C_FORMAT
-	bne @+ ; if not FORMAT, procedure finishes
-	; FORMAT part, more to write
-	mva #$aa $a555 ; $555<$aa
-	mva #$55 $a2aa ; $2aa<$55
-	; PREPARE FOR SECTOR TO ERASE
-@	pla
-	tax
-	rts
-.endif
-
-.if (FLASH_TYPE=M_TYPE_28SF) .or .def FLASH_INCLUDE_ALL
-TRIGGER_FORMAT equ $30
-C_FORMAT	equ $30
-C_BYTE_PROG	equ $10
-flashoppreamble
-	pha
-	lda #C_BYTE_PROG
-	scc
-	lda #C_FORMAT ; only if c set
-flashoppreamble_acc ; 28SF0x0
-	sta $d500,x ; can be any address
-	sta $a000; command: FORMAT/ID_MODE/BYTE_PROG, any address
-	rts
-.endif
-.if FLASH_TYPE=M_TYPE_28SF
-flash_unlockchip
-	sta $D500,x
-	; read from 1823H, 1820H, 1822H, 0418H, 041BH, 0419H, 041AH
-	lda $B823
-	lda $B820
-	lda $B822
-	lda $A418
-	lda $A41B
-	lda $A419
-	lda $A41A
-	rts
-.endif
-.if (FLASH_TYPE=M_TYPE_29SF) .or (FLASH_TYPE=M_TYPE_39SF)
-flash_unlockchip
-	rts
-.endif
-
-.ifndef STRIPPED
-; flash size only needed in not stripped version for format result check.
-flash_size dta 0
-; as well as check_vendor procedure
-; 
+; ------------------------------------------------------------------------
 ; --------------------------
 ; PROCEDURE
 ; x = 0 or 0x40 - flash chip address.
-; returns c set -> failed
-; if c cleared, x=vendor, y=product code
-; there are some memories which need multiple read, but we do not abuse them.
-check_vendor
-	lda #C_ID_MODE
-	jsr flashoppreamble_acc
-	ldx $a000 ; vendor
-	ldy $a001 ; id
-	mva #$f0 $a000 ; exit read_id
-	mva #0 flash_size 
+; stores proper vector table pointer if worked
+; this fails only when somebody stores vendor and product bytes
+; at the proper cells.
+;
+; then in the code we call lda #offset/jsr jsrtovectorproc
+check_type
+	ldy #(2*(num_mems-1))
+?again
+	sty m_iter
+	; store default values
+	jsr flashsetbank
+	lda $a000
+	sta m_vendor
+	lda $a001
+	sta m_kind
+	
+	jsr jsrtosoftidentry
 
-	cpx #$BF; SST 
-	bne next1
-	; nice to store that this is SST
-	cpy #$B5
-	bne @+
-	lda #$0f
-@	cpy #$B6
-	bne @+
-	lda #$1f
-@	cpy #$B7
-	bne @+
-	lda #$3f
-@	sta flash_size
-	clc
-	rts
-next1
-.if 0
-	lda #C_ID_MODE
-	jsr flashoppreamble_acc
-	ldx $a000 ; vendor
-	ldy $a001 ; id
-	mva #$f0 $a000 ; exit read_id
-	mva #0 flash_size 
-
-	cpx #$BF; SST 
-	bne cvexit
-	; nice to store that this is SST
-	cpy #$24
-	bne @+
-	lda #$1f
-@	cpy #$13
-	bne @+
-	lda #$3f
-@	sta flash_size
-	clc
-	rts
-.endif
-cvexit
+	jsr flashsetbank
+	lda $a000 ; vendor
+	cmp m_vendor
+	sta m_vendor
+	beq ?next
+	lda $a001 ; id
+	cmp m_kind
+	sta m_kind
+	beq ?next
+	bne ?OK
+?next
+	ldy	m_iter
+	dey
+	dey
+	bpl	?again
+	; error
 	sec
 	rts
-.endif
+?OK
+	lda	M_CHECK_VECS+1,y
+	sta	M_VECTOR+1
+	lda	M_CHECK_VECS,y
+	sta	M_VECTOR
 
+jsrtosoftidexit
+	lda	#softid_exit
+	jsr	jsrtovectorproc
+	lda $d013
+	sta $3fa
+	clc
+	rts
 
+jsrtosoftidentry
+       lda M_CHECK_VECS+1,y ; first is softid entry
+       pha
+       lda M_CHECK_VECS,y ; first is softid entry
+       pha
+       php
+       rti ; jsr to tabled func
+
+; PROCEDURE
+; performs jump to vector table at offset in A provided
+; y passed to the procedure called
+jsrtovectorproc
+	php ; preserve C
+	clc
+	adc	M_VECTOR
+	sta	tmpa
+	lda	M_VECTOR+1
+	adc	#0
+	plp ; restore C
+	pha
+	lda	tmpa
+	pha
+	php
+	rti
 
 ; --------------------------
 flashformatchip2
@@ -227,11 +148,9 @@ flashformatchip
 
 	sei
 	stx store_x
-	lda #C_FORMAT
-	jsr flashoppreamble_acc ; does not touch A
-	sta $d502,x
-	lda #TRIGGER_FORMAT
-	sta $b555 ; FORMAT HERE TRIGGERED!
+	sec ; will format flash!
+	lda #flashoppreamble
+	jsr jsrtovectorproc ; preserves A
 	; not needed to mva $ff flashcmp
 	jsr wait4flashcheckresult ; waits for format finished
 	; then check number of banks for FFs
@@ -262,12 +181,14 @@ flashformatsector
 ; format 4kb evensector 
 ; strange form - easily maps to cartridge banks
 ; to format bank, must format sector (x<<1) and (x<<1) +1
+; IT IS LONG because it has to be save, ie not format if formatted etc.
+
 	; first check if all ff
 	; this is to avoid wear
 	stx flashformatstorex
 	sta flashformatstorea
 	sei
-	sta $d500,x
+	jsr flashsetbank
 	; store #$a0 or #$b0
 	sta flashformataddrcheck + 2
 	jsr flashchecksectorformatted	
@@ -276,9 +197,9 @@ flashformatsector
 flashformatstorex	equ * + 1
 	ldx #0 ; filled before
 ; check least sector bit
-
-	lda #C_FORMAT
-	jsr flashoppreamble_acc ; does not touch A,X
+	sec
+	lda #flashoppreamble ; does not touch A,X
+	jsr jsrtovectorproc
 	sta $D500,x
 	; A must be either $A0 or $B0
 flashformatstorea	equ * + 1
@@ -296,7 +217,7 @@ flashtmpaddr	equ	*+1
 	sta flashformataddrcheck+2
 	
 	ldx flashformatstorex
-	sta $d500,x
+	jsr flashsetbank
 
 	; check if all data in sector is $ff
 flashchecksectorformatted
@@ -309,10 +230,12 @@ flashformataddrcheck
 	bne flashsectorformaterror
 	inx
 	bne flashformataddrcheck
+	FEEDBACK
 	inc flashformataddrcheck + 2
 	dey
 	bne flashformataddrcheck
-	 
+	FEEDBACKEND
+
 flashsectorformatgood
 	jsr flashcartoff
 	clc
@@ -323,7 +246,39 @@ flashsectorformaterror
 	sec
 	rts
 
+.macro FEEDBACK
+	.if (FRAME_FEEDBACK)>=1
+	php
+	pha
+	.if (FRAME_FEEDBACK&1)==1
+	inc colbaks
+	lda colbaks
+	sta colbak
+	.endif
+	.if (FRAME_FEEDBACK&2)==2
+	lda #0
+	sta dmactl
+	sta sdmctl
+	.endif
+	pla
+	plp
+	.endif
 
+.endm
+.macro FEEDBACKEND
+	.if FRAME_FEEDBACK>=1
+	php
+	pha
+	lda #0
+	sta colbaks
+	sta colbak
+	lda #34
+	sta sdmctl
+	sta dmactl
+	pla
+	plp
+	.endif
+.endm
 ; ---------------------
 ; PROCEDURE
 
@@ -346,8 +301,9 @@ byte_differs
 	sta flashcmp
 	sei
 	pha
-	lda #C_BYTE_PROG
-	jsr flashoppreamble_acc ; preserves A,X
+	clc ; byte program preamble
+	lda #flashoppreamble ; preserves A,X
+	jsr jsrtovectorproc
 	pla
 	; set right bank
 	sta $D500,x
@@ -356,10 +312,12 @@ byte_differs
 
 wait4flashcheckresult ; sei mode
 	mva #0 flashcnt
-	ldy #1 ; first time wait short first turn to speed up byte write.
-	bne @+
+	sta flashcnt+1
+	; ldy #1 ; first time wait short first turn to speed up byte write.
+	beq @+
 
 flashwaitfordone
+	; WARNING! 29f040 erases even 10 seconds!
 	; approx 100ms in overall for chip erase:
 	; as many cycles needed, as 256*cycles >100ms * (1+epsilon)
 	; 100 ms is 180000 cycles
@@ -369,26 +327,37 @@ flashwaitfordone
 	; so flipipng values, and adding margin,
 	; we count 128*6 cycles in inner loop.
 	; max sector erase by datasheet: 25 ms
-	; max chip erase by datasheet: 100 ms
-	ldy#250
-@	dey
-	nop
-	bne @-
+	; max chip erase by datasheet: 100 ms 39sf040
+	; max chip erase by datasheet: 20 ms 28sf040
+	; max chip erase by datasheet: 10000 ms 29f040
+
+	;ldy#250
+	sta WSYNC
+@	
+	;lda #flash_wait_unit
+	;jsr jsrtovectorproc
+	FEEDBACK
+	;dey
+	;bne @-
 	
-@	ldy #{ lda.w }
+@	
+
+	ldy #{ lda.w }
 	jsr flashprocessbyte
 	sta flashval
 	ldy #{ eor.w }
 	jsr flashprocessbyte
 	inc flashcnt
 	bne @+
-		sta $d580
+	inc flashcnt+1
+	bne @+
+		jsr flashcartoff
 		lda #$ff ; status
 		rts
 @
 	and #$40
 	bne flashwaitfordone
-	sta $d580
+	jsr flashcartoff
 flashval	equ *+1
 	lda #0
 flashcmp	equ *+1
@@ -397,7 +366,7 @@ flashcmp	equ *+1
 	rts
 
 flashcnt
-	dta 0
+	dta 0,0
 ; ----------------------
 ; PROCEDURE
 
@@ -411,6 +380,10 @@ flashbyteop
 	sta $aaaa
 	rts
 
+flashend
+	FEEDBACKEND
+	rts
+
 flashincaddr
 	inw flashaddr
 	rts
@@ -418,6 +391,12 @@ flashincaddr
 flashsetaddr
 	stx flashaddr
 	sty flashaddr+1
+	rts
+
+flashsetbank
+	sta $d500,x
+	lda $d013
+	sta $3fa
 	rts
 
 flashcartoff
