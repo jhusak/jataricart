@@ -1,4 +1,4 @@
-; JatariCart256 Action!3.6 flasher
+; JatariCart256 flasher
 ; by Jakub Husak , 04.01.2020
 ; All Rights Reserved.
 ;
@@ -16,9 +16,13 @@
 ; along with JatariCart256.  If not, see <http://www.gnu.org/licenses/>.
 ;
 	icl '../../lib/atari.hea'
+; flash image is included at the end of file
 ; uncomment when flashing all cart or want to check all blocks written so far.
 ;.def compareall
-.def TWOCHIPS
+.if .not .def CUSTOM_CART_LAYOUT
+	.define CUSTOM_CART_LAYOUT
+.endif
+
 BankNum	equ	$88
 Counter	equ	$89
 operation	equ $8a
@@ -44,11 +48,32 @@ STARTFLASHWRITE
 	sta 66
 	; waiting for cart to be inserted
 	jsr print
-	dta c'Insert cartridge...',0
+	TITLE+128
+	dta $9b,c'JatariCart/MaxFlash flasher'
+	dta $9b
+	dta c'by JHusak, I.2023'
+	dta $9b
+	dta c'JatariCart of size '
+	CARTSIZE+128
+	dta c' kB needed',$9b,$9b
+	dta c'Insert JatariCart of '
+	CARTSIZE+128
+	dta c' kB...',0
+
 	sta $D500
-@	lda $D013
+?wloop	lda $D013
 	lsr
-	bcc @-
+	bcc ?wloop
+
+	ldx #$25
+?lloop
+	bit VCOUNT
+	bmi *-3
+	bit VCOUNT
+	bpl *-3
+	dex
+	bne ?lloop
+
 	jsr print
 	dta c' inserted.',$9b,0
 	
@@ -128,18 +153,23 @@ menu
 	jsr print
 	dta c'Press:',$9b
 	dta c'START  - format cart and programm',$9b
-	dta c'SELECT - verify; repair bad blocks.',$9b
-	dta c'OPTION - verify only',$9b,0
-@	lda 53279
+	;dta c'SELECT - verify; repair bad blocks.',$9b
+	dta c'OPTION - verify',$9b,0
+?wloop	lda 53279
 	cmp #7
-	beq @-
+	beq ?wloop
 	sta operation
 
 	cmp #select
-	beq VERIFYREPAIR
+	beq ?wloop
 
 	cmp #option
 	jeq CHECKONLY
+
+	cmp #start
+	beq FORMAT
+	bne ?wloop
+
 	; start
 FORMAT
 	jsr printformatting
@@ -148,6 +178,7 @@ FORMAT
 	ldx #0
 	jsr flashformatchip
 	bcs formatfailed
+	jsr flashend ; restores display etc.
 	.if .def TWOCHIPS
 	jsr printdone
 	jsr printformatting
@@ -156,6 +187,7 @@ FORMAT
 	ldx #$40
 	jsr flashformatchip
 	bcs formatfailed
+	jsr flashend ; restores display etc.
 	.endif
 printdone	jsr print
 	dta c'done:)',$9b,0
@@ -378,7 +410,7 @@ _cmpaddr	equ * + 1
 	lda #$ff
 	cmp _writeaddr+1
 	bne formatted_next2
-	
+	jsr flashend
 	jmp COMPARE_CRC16_DEST_ALL
 
 FINISH_PROCESS
@@ -417,7 +449,7 @@ badcompare_tmp2 equ 	* +1
 	sec
 	jmp dmaon	
 ; -------
-	icl '../../lib/flashwritelib_new.asx'
+	icl '../../lib/flashwritelib.asx'
 
 	icl '../../lib/crc16_v2.asm'
 
@@ -433,7 +465,7 @@ badcompare_tmp2 equ 	* +1
 	dta a(STARTFLASHWRITE)
 ; ---------------------------------------
 ; blocks for every 8kb bank
-.rept 128, #
+.rept BANKS, #
         .print "A :1"
         .local block:1
 ;------------
@@ -442,7 +474,7 @@ badcompare_tmp2 equ 	* +1
         dta b(1) ; Counter
 ;------------
         org _SOURCE
-        ins "onEscape (14.12. 2022).rom",+:1*8192,8192
+	MACRO_FILE(:1)
 ;------------
         org $2e2
         dta a(MAIN_PROCESS)
@@ -450,6 +482,7 @@ badcompare_tmp2 equ 	* +1
         .endl
  .endr
 ;------------
+	CUSTOM_CART_LAYOUT
         org $2e2
         dta a(FINISH_PROCESS)
 

@@ -1,2 +1,3 @@
-mads flashwrite.asx -o:OnEscapeflashwrite.xex
+cd `dirname $0`
+mads flashwrite.asx -m:macroflashname.asx -o:OnEscapeflashwrite.xex
 
