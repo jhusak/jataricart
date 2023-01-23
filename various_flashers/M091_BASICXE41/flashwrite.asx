@@ -1,15 +1,13 @@
-; JatariCart256 Action!3.6 flasher
+; JatariCart256 flasher
 ; by Jakub Husak , 04.01.2020
 ; All Rights Reserved.
 ;
-; Action!3.6: Copyright 1983 by Clinton W Parker.
-;
-; JatariCart256 is free software: you can redistribute it and/or modify
+; JatariCart is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation, either version 3 of the License, or
 ; (at your option) any later version.
 ;
-; JatariCart256 is distributed in the hope that it will be useful,
+; JatariCart is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ; GNU General Public License for more details.
@@ -18,8 +16,10 @@
 ; along with JatariCart256.  If not, see <http://www.gnu.org/licenses/>.
 ;
 	icl '../../lib/atari.hea'
+; flash image is included at the end of file
 ; uncomment when flashing all cart or want to check all blocks written so far.
 ;.def compareall
+
 BankNum	equ	$88
 Counter	equ	$89
 operation	equ $8a
@@ -35,21 +35,42 @@ _DEST	equ	$A000
 
 ; test code
 	org $2000
-	jsr $f420 ; clrscr
-	lda portb
-	cmp #$fd
-	beq @+
-	jsr print
-	dta c'Run with BASIC enabled and restart.',0
-	jmp *
+STARTFLASHWRITE
+	mva #$A0 106
+	jsr opened
+	lda 20
+@	cmp 20
+	beq @-
 @	lda #$1
 	sta 66
 	; waiting for cart to be inserted
 	jsr print
-	dta c'Insert cartridge...',0
-@	lda $D013
-	lsr 
-	bcc @-
+	TITLE+128
+	dta $9b,c'JatariCart/MaxFlash flasher'
+	dta $9b
+	dta c'by JHusak, I.2023'
+	dta $9b
+	dta c'JatariCart of size '
+	CARTSIZE+128
+	dta c' kB needed',$9b,$9b
+	dta c'Insert JatariCart of '
+	CARTSIZE+128
+	dta c' kB...',0
+
+	sta $D500
+?wloop	lda $D013
+	lsr
+	bcc ?wloop
+
+	ldx #$25
+?lloop
+	bit VCOUNT
+	bmi *-3
+	bit VCOUNT
+	bpl *-3
+	dex
+	bne ?lloop
+
 	jsr print
 	dta c' inserted.',$9b,0
 	
@@ -57,33 +78,123 @@ _DEST	equ	$A000
 	lda $d013
 	sta $3fa
 
+	ldx #0 ; chip address
+	stx numchips
+_check_chips
+	stx _storex
+	jsr check_type
+	bcc ?_next
+	jsr print
+	dta c'unrecognized chip: ',0
+	lda m_vendor
+	jsr printhex
+	lda m_kind
+	jsr printhex
+	cpx #$0
+	seq
+		jmp *
+	jsr print
+	dta c'ignoring chip ...',0
+	jmp menu
+?_next	inc numchips
+	lda numchips
+	clc
+	adc #$30
+	sta chipno
+
+	jsr print
+	dta c'chip '
+chipno
+	dta c'0'
+	dta c' vend/prod: ',0
+	lda m_vendor
+	jsr printhex
+	lda m_kind
+	jsr printhex
+	jsr print
+	dta c' code: ',0
+
+	; print memory type
+	lda M_VECTOR
+	clc
+	adc #flash_idstr ; will print flashmem text id
+	sta ?taddr
+	lda M_VECTOR+1
+	adc #0
+	sta ?taddr+1
+	ldy #0
+?loop	; write string onscreen till 0
+	lda ?taddr:$ffff,y
+	beq ?exit
+	sty st_y
+	jsr outchar
+	ldy st_y:#0
+	iny
+	bne ?loop
+?exit
+	jsr printnl
+	ldx _storex
+	cpx #0
+	bne menu
+	lda m_vendor
+	sta t_vendor
+	lda m_kind
+	sta t_kind
+	ldx #$40
+	jmp _check_chips
+menu
+	jsr printnl
 	;lda #$ff
 	;sta $d301
 	
 	jsr print
 	dta c'Press:',$9b
 	dta c'START  - format cart and programm',$9b
-	dta c'SELECT - verify; repair bad blocks.',$9b
-	dta c'OPTION - verify only',$9b,0
-@	lda 53279
+	;dta c'SELECT - verify; repair bad blocks.',$9b
+	dta c'OPTION - verify',$9b,0
+?wloop	lda 53279
 	cmp #7
-	beq @-
+	beq ?wloop
 	sta operation
 
 	cmp #select
-	beq VERIFYREPAIR
+	beq ?wloop
 
 	cmp #option
-	beq CHECKONLY
+	jeq CHECKONLY
+
+	cmp #start
+	beq FORMAT
+	bne ?wloop
+
 	; start
-FORMAT  
+FORMAT
+	jsr printformatting
 	jsr print
-	dta c'Formatting cart ...',0
+	dta c'1...',0
+	ldx #0
 	jsr flashformatchip
 	bcs formatfailed
+	jsr flashend ; restores display etc.
+	.if .def TWOCHIPS
+	jsr printdone
+	jsr printformatting
 	jsr print
+	dta c'2...',0
+	ldx #$40
+	jsr flashformatchip
+	bcs formatfailed
+	jsr flashend ; restores display etc.
+	.endif
+printdone	jsr print
 	dta c'done:)',$9b,0
 	rts
+
+printformatting
+	jsr print
+	dta c'Formatting cart chip ',0
+	rts
+
 formatfailed
 	jsr print
 	dta c'failed:(',$9b,'Waiting for reboot...',$9b,0
@@ -95,8 +206,25 @@ CHECKONLY
 	jsr print
 	dta c'Compare.',$9b,0
 	rts
+
+t_vendor	.byte 0
+t_kind		.byte 0
+numchips	.byte 0
+_storex		.byte 0
+
 crcsums
 	:128 dta 0,0
+opened	
+	ldx	#0
+	lda 	#12
+	jsr 	icio
+	mwa 	#name	icbufa,x
+	mva 	#$0c	icax1,x
+	mva 	#$0	icax2,x
+	lda 	#3
+icio	sta	iccmd,x
+	jmp 	$e456
+name	dta 'E:',$9b
 
 CHECKINIT
 	mwa #_SOURCE _csrc
@@ -264,9 +392,9 @@ FORMATTED
 	lda _writeaddr+1
 	clc
 	adc #$20
-	sta _cmpaddr
+	sta _cmpaddr ; only hi byte
 	mwa #_DEST flashaddr
-	sec
+	; sec
 formatted_next
 	ldx BankNum
 formatted_next2
@@ -279,7 +407,7 @@ _cmpaddr	equ * + 1
 	lda #$ff
 	cmp _writeaddr+1
 	bne formatted_next2
-	
+	jsr flashend
 	jmp COMPARE_CRC16_DEST_ALL
 
 FINISH_PROCESS
@@ -331,48 +459,29 @@ badcompare_tmp2 equ 	* +1
 	;jmp *
 	icl '../../lib/print2.asx'
 	org $2e2
-	dta a($2000)
+	dta a(STARTFLASHWRITE)
 ; ---------------------------------------
-; D500 A000 20 6c  offset:$0000
-; D503 A000 85 86 offset $1000
-; D504 A000 20 dd offset $2000
-; All: B000 36 01 offset $3000
 ; blocks for every 8kb bank
+.rept BANKS, #
+        .print "A :1"
+        .local block:1
 ;------------
-	org BankNum
-	dta b(0) ; $d500
-	dta b(1) ; Counter
-;------------	
-	org _SOURCE
-	ins "BASIC XE 4.1.rom",+$1000,$1000
-	ins "BASIC XE 4.1.rom",+$0000,$1000
+        org BankNum
+        dta b(:1)
+        dta b(1) ; Counter
 ;------------
-	org $2e2
-	dta a(MAIN_PROCESS)
+        org _SOURCE
+	BANKS_FILE(:1)
 ;------------
-	org BankNum
-	dta b(1) ; d501
-	dta b(1) ; Counter
-;------------	
-	org _SOURCE
-	ins "BASIC XE 4.1.rom",+$3000,$1000
-	ins "BASIC XE 4.1.rom",+$0000,$1000
+        org $2e2
+        dta a(MAIN_PROCESS)
 ;------------
-	org $2e2
-	dta a(MAIN_PROCESS)
+        .endl
+ .endr
 ;------------
-	org BankNum
-	dta b(9) ; $d509
-	dta b(1) ; Counter
-;------------	
-	org _SOURCE
-	ins "BASIC XE 4.1.rom",+$2000,$1000
-	ins "BASIC XE 4.1.rom",+$0000,$1000
-;------------
-	org $2e2
-	dta a(MAIN_PROCESS)
-;------------
+	.if .def CUSTOM_CART_LAYOUT
+	CUSTOM_CART_LAYOUT
+	.endif
 
-;------------
-	org $2e2
-	dta a(FINISH_PROCESS)
+        org $2e2
+        dta a(FINISH_PROCESS)

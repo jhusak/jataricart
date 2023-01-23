@@ -1,13 +1,13 @@
-; JatariCart256 flasher
+; JatariCart flasher
 ; by Jakub Husak , 04.01.2020
 ; All Rights Reserved.
 ;
-; JatariCart256 is free software: you can redistribute it and/or modify
+; JatariCart is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation, either version 3 of the License, or
 ; (at your option) any later version.
 ;
-; JatariCart256 is distributed in the hope that it will be useful,
+; JatariCart is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ; GNU General Public License for more details.
@@ -19,9 +19,6 @@
 ; flash image is included at the end of file
 ; uncomment when flashing all cart or want to check all blocks written so far.
 ;.def compareall
-.if .not .def CUSTOM_CART_LAYOUT
-	.define CUSTOM_CART_LAYOUT
-.endif
 
 BankNum	equ	$88
 Counter	equ	$89
@@ -474,7 +471,7 @@ badcompare_tmp2 equ 	* +1
         dta b(1) ; Counter
 ;------------
         org _SOURCE
-	MACRO_FILE(:1)
+	BANKS_FILE(:1)
 ;------------
         org $2e2
         dta a(MAIN_PROCESS)
@@ -482,8 +479,8 @@ badcompare_tmp2 equ 	* +1
         .endl
  .endr
 ;------------
+	.if .def CUSTOM_CART_LAYOUT
 	CUSTOM_CART_LAYOUT
+	.endif
         org $2e2
         dta a(FINISH_PROCESS)
-
-
