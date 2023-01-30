@@ -60,5 +60,5 @@ mads flashwrite.asx -o:flashwrite.xex
 
 __The JCart256/1024 is compatible with Atari MaxFlash 8megabits cartridge regarding banking scheme, but MaxFlash flashing software does not recognize the JCart256/1024 cartidge.__
 
-__Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB makes problems, so may not other extensions/SO roms. This will change in the near future.__
+__Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB sometimes makes problems, so may other extensions/SO roms.__
 
