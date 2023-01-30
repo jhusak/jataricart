@@ -46,17 +46,15 @@ after each access. This will let the system think as cartridge never was switche
 
 ## Files and descriptions:
 
-flashwritelib.asx - 6502 code library for formatting flash/formatting sector and write byte.
+* flashwritelib.asx - 6502 code library for formatting flash/formatting sector and write byte.
 
-flashwrite.asx - 6502 code for generate flasher (when compiled, it contains either flash routines and cartridge image itself)
+* flashwrite.asx - 6502 app code for generate flasher (when compiled, it contains either flash routines and cartridge image itself). This code makes xex files self-contained DOS-independent.
 
-crc16_v2.asm - crc16 library for fast checking every sector (when flash is damaged, sometimes it happens that write sector damages another)
+* crc16_v2.asm - crc16 library for fast checking every sector (when flash is damaged, sometimes it happens that write sector damages another)
 
-print2.asm - print procedure with inline text.
+* print2.asm - print procedure with inline text.
 
-Compile (mads needed, http://mads.atari8.info):
-
-mads flashwrite.asx -o:flashwrite.xex
+Compile (mads needed, http://mads.atari8.info): various_flashers has many examples how to set macros to succesfuly compile flashwrite.asx
 
 __The JCart256/1024 is compatible with Atari MaxFlash 8megabits cartridge regarding banking scheme, but MaxFlash flashing software does not recognize the JCart256/1024 cartidge.__
 
