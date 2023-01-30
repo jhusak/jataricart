@@ -23,7 +23,7 @@ Po kilku(nastu,dziesięciu) popikiwaniach i przerwach flasher kończy pracę:
 __NIE PRZERYWAJ PRACY PODCZAS FLASHOWANIA!!! (tzn. gdy flasher nie odczytuje z dysku, a zapisuje do kartridża)__
 Można to zrobić podczas czytania danych z pliku.
 
-Aby wygenerować flasher (plik .xex) należy wejść do wybranego katalogu i wykonać ../makeflashwrite.sh
+Aby wygenerować flasher (plik .xex) należy wejść do wybranego katalogu i wykonać ../makeflashwrite.sh lub z katalogu various_flashers wywołać ./makeflashwrite.sh <katalog>
 
 
 --------------------------------------------------------------------------------------------------------------------- 
@@ -54,4 +54,4 @@ After some beeps and pauses the flasher finishes it's job:
 __DO NOT BREAK THE JOB DURING FLASHING!!! (ie when flasher does not read from the disk, but writes to it)__
 You are free to do it during read from device.
 
-To generate flasher (.xex file) go to chosen catalog and run: ../makeflashwrite.sh
+To generate flasher (.xex file) go to chosen catalog and run: ../makeflashwrite.sh or from various_flashers catalog ./makeflashwrite.sh <thecatalog>
