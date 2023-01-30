@@ -1,0 +1,46 @@
+; Action!3.6: Copyright 1983 by Clinton W Parker.
+; D500 A000 20 6c  offset:$0000
+; D503 A000 85 86 offset $1000
+; D504 A000 20 dd offset $2000
+; All: B000 36 01 offset $3000
+;
+.define TITLE	dta c'BASICXE 4.1'
+.define CARTSIZE dta c'>=128'
+.define BANKS	0
+
+.macro CUSTOM_CART_LAYOUT
+;------------
+	org BankNum
+	dta b(0) ; $d500
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "BASIC XE 4.1.rom",+$1000,$1000
+	ins "BASIC XE 4.1.rom",+$0000,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(1) ; d501
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "BASIC XE 4.1.rom",+$3000,$1000
+	ins "BASIC XE 4.1.rom",+$0000,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(9) ; $d509
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "BASIC XE 4.1.rom",+$2000,$1000
+	ins "BASIC XE 4.1.rom",+$0000,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+.endm
