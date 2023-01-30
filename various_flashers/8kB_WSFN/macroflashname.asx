@@ -1,0 +1,5 @@
+.define TITLE	dta c'WSFN'
+.define CARTSIZE dta c'>=128'
+.define BANKS	1
+.define BANKS_FILE ins "WSFN.rom",+:1*8192,8192
+

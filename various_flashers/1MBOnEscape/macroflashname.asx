@@ -1,5 +1,5 @@
 .define TITLE	dta c'OnEscape'
 .define CARTSIZE dta c'1024'
 .define BANKS	128
-.define BANKS_FILE ins "onEscape (14.12. 2022).rom",+%%1*8192,8192
+.define BANKS_FILE ins "onEscape (14.12. 2022).rom",+:1*8192,8192
 .define TWOCHIPS

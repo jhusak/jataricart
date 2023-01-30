@@ -1,0 +1,5 @@
+.define TITLE	dta c'PILOT'
+.define CARTSIZE dta c'>=128'
+.define BANKS	1
+.define BANKS_FILE ins "Atari PILOT.rom",+:1*8192,8192
+
