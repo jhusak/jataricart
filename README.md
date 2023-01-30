@@ -2,7 +2,7 @@
 
 __The cartridge projest is on heavy development state. Please expect frequent changes.__
 
-__at the end of 01.2023 heavy rearrangement gas been done. Now DRY rule is fulfilled.__
+__At the end of 01.2023 heavy rearrangement gas been done. Now DRY rule is fulfilled.__
 
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
 
