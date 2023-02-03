@@ -1,0 +1,40 @@
+.define TITLE	dta c'OSS BasicXL 1.03'
+.define CARTSIZE dta c'>=128'
+.define BANKS	0
+
+.macro CUSTOM_CART_LAYOUT
+;------------
+	org BankNum
+	dta b(0) ; $d500
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "OSSBasicXL103.rom",+$1000,$1000
+	ins "OSSBasicXL103.rom",+$0000,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(1) ; d501
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "OSSBasicXL103.rom",+$3000,$1000
+	ins "OSSBasicXL103.rom",+$0000,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+	org BankNum
+	dta b(9) ; $d509
+	dta b(1) ; Counter
+;------------	
+	org _SOURCE
+	ins "OSSBasicXL103.rom",+$2000,$1000
+	ins "OSSBasicXL103.rom",+$0000,$1000
+;------------
+	org $2e2
+	dta a(MAIN_PROCESS)
+;------------
+.endm
