@@ -257,11 +257,18 @@ _cdst	equ * + 1
 	sta $3fa
 	cli
 	jsr print
-	dta c'non-match byte#:',0
+	dta 253,c'non-match byte#:',0
 	lda badcompare_counter+1
 	jsr printhex
 	lda badcompare_counter
 	jsr printhex
+	jsr print
+	dta c' (START-cont)',0
+
+	lda #7
+	cmp CONSOL
+	req
+
 	jsr printnl
 	sec
 	rts
@@ -345,7 +352,7 @@ _tsrc	equ * + 1
 	bne _tsrc -1
 calccrc_bank	equ * +1
 	lda #$ba ; nk number
-	asl 
+	asl
 	tax
 	plp
 	bcc crccheck
