@@ -4,6 +4,8 @@ __The cartridge projest is on heavy development state. Please expect frequent ch
 
 __At the end of 01.2023 heavy rearrangement gas been done. Now DRY rule is fulfilled.__
 
+__There are two memory versions of JatariCart (for now): 39SF0x0 based (JatariCart) and 29F0x0 based (JatariCart A). They are labelled as above__
+
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
 
 The banking scheme was chosen because it is very simple to handle with 3 raw TTL chips (and two double diodes acting as triple "or" gate in version 1MB). There is probably no simplier scheme, either in application or in handling by 6502 (only one instruction needed to change bank)
