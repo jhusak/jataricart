@@ -3,6 +3,7 @@ Umieść plik z wybranego katalogu na dysku, w pliku atr lub po prostu skopiuj i
 albo
 2. uruchomi się kartridż.
 W drugim przypadku, należy trzymając OPTION po kilka-kilkanaście razy kilka razy na sekundę wciskać klawisz RESET, aż zadziała tzw. błąd resetu i komputer zbootuje się na zimno i pozwoli wczytać flasher. Jeśli na kartridżu jest coś nagrane, to w zależności co, można:
+* jeśli masz system QMEG, to możesz pominąć inicjalizację kartridża przez RESET-SELECT.
 * jeśli jest nagrane coś, co wyłącza kartridż, należy poczekać do tego momentu, następnie wcisnąć reset lub wykorzystać błąd reset.
 * kartridże z językami programowania pozwalają systemowi bootować się, więc nie ma problemu
 * jeśli jest nagrane coś, co kartridża nie wyłącza, należy próbować wykorzystać błąd reset, a w ostateczności, jak nijak nie idzie, włożyć dokładnie i poziomo stanowczym ruchem włożyć kartridż po uruchomieniu flashera, gdy prosi on o włożenie kartridża.  Jednak grozi to uszkodzeniem komputera (mała szansa ale jednak). JatariCart ma najbardziej wystający pin masy i wsunięty pin 5V, więc przy równym wsuwaniu kartridża najpierw łączy masa, potem wszystkie piny z wyjątkiem zasilania, a na końcu zasilanie.
