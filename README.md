@@ -21,7 +21,7 @@ Summary:
 - first chip can be hardware write-protected even if flash installed (JCart1024)
 - second has no hardware write protection (JCart1024)
 - both chips can be totally different (JCart1024)
-- most 28x, 29x, 39x family work, but for now flashing software is prepared to work with 39sf0x0 memories, 28sf0x0 is in progress.
+- most 28x, 29x, 39x family work, but for now flashing software is prepared to work with 39sf0x0, 29f0x0, 28sf0x0 memories.
 
 The internal construction of JatariCart256kB allows utilize max 256kB of flash memory (32 banks) of PROM/EPROM memory (they are not available anymore, however)
 The internal construction of JatariCart1MB allows utilize max 1MB of flash memory (128 banks) of PROM/EPROM memory.
