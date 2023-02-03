@@ -1,0 +1,4 @@
+.define TITLE	dta c'PrinceOfPersia'
+.define CARTSIZE dta c'>=256'
+.define BANKS	24
+.define BANKS_FILE ins "PoP_Atarimax_20211024_final.car",+:1*8192,8192
