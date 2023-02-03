@@ -1,0 +1,4 @@
+.define TITLE	dta c'Last Ninja II'
+.define CARTSIZE dta c'>=128'
+.define BANKS	13
+.define BANKS_FILE ins "ln2cartimage.bin",+:1*8192,8192
