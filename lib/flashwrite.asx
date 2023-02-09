@@ -21,7 +21,6 @@
 ;.def compareall
 
 BankNum	equ	$88
-Counter	equ	$89
 operation	equ $8a
 start	equ	6	; format chip and program
 select  equ	5	; ferify and format sectors
@@ -48,7 +47,7 @@ STARTFLASHWRITE
 	TITLE+128
 	dta $9b,c'JatariCart/MaxFlash flasher'
 	dta $9b
-	dta c'by JHusak, I.2023'
+	dta c'by JHusak, 09.02.2023'
 	dta $9b
 	dta c'JatariCart of size '
 	CARTSIZE+128
@@ -57,8 +56,8 @@ STARTFLASHWRITE
 	CARTSIZE+128
 	dta c' kB...',0
 
-	sta $D500
-?wloop	lda $D013
+	sta $d500
+?wloop	lda $d013
 	lsr
 	bcc ?wloop
 
@@ -75,8 +74,7 @@ STARTFLASHWRITE
 	dta c' inserted.',$9b,0
 	
 	; cart inserted, fake it was not changed
-	lda $d013
-	sta $3fa
+	jsr accept_bank_change
 
 	ldx #0 ; chip address
 	stx numchips
@@ -214,7 +212,7 @@ numchips	.byte 0
 _storex		.byte 0
 
 crcsums
-	:128 dta 0,0
+	:128	.word 0
 opened	
 	ldx	#0
 	lda 	#12
@@ -234,7 +232,7 @@ CHECKINIT
 CHECK
 	mva #0 badcompare_counter
 	sta badcompare_counter+1
-	ldx BankNum
+	jsr GetBankNumToX
 	sta $d500,x
 checkloop
 _csrc	equ * + 1
@@ -255,9 +253,7 @@ _byte_ok
 	beq _all_bytes_ok
 	; several differences found...
 	; cart off
-	sta $d580
-	lda $d013
-	sta $3fa
+	jsr cartoff_and_accept_bank_change
 	cli
 	; print status
 	jsr print
@@ -277,9 +273,7 @@ _byte_ok
 	sec
 	rts
 _all_bytes_ok
-	sta $d580
-	lda $d013
-	sta $3fa
+	jsr cartoff_and_accept_bank_change
 	cli
 	lda #'o'
 	jsr outchar
@@ -287,6 +281,14 @@ _all_bytes_ok
 dmaon	mva #34 dmactls
 	sta dmactl
 	rts
+
+cartoff_and_accept_bank_change
+	sta $d580
+accept_bank_change
+	lda $d013
+	sta $3fa
+	rts
+
 VERIFY
 	;mwa #_SOURCE _csrc
 	;mwa #_DEST _cdst
@@ -294,23 +296,21 @@ VERIFY
 	bcc v_rts
 	lda #'f'
 	jsr outchar
-	ldx BankNum
+	jsr GetBankNumToX
 	lda #$a0
 	jsr flashformatsector
-	ldx BankNum
+	jsr GetBankNumToX
 	lda #$b0
 	jsr flashformatsector
 	jsr FORMATTED
-	dec Counter
-	bne VERIFY
 v_rts	jmp dmaon
 
 COMPARE_CRC16_DEST_ALL
-	lda BankNum
-	sta _tbanknum
+	jsr GetBankNumToX
+	stx _tbanknum
 @	sei
 _tbanknum	equ * + 1
-	sta $D500
+	sta $d500
 	clc
 	mva _tbanknum calccrc_bank
 	jsr CALCCRC_DEST
@@ -319,9 +319,7 @@ _tbanknum	equ * + 1
 	dec _tbanknum
 	bpl @-
 	.endif
-	sta $D580
-	lda $d013
-	sta $3fa
+	jsr cartoff_and_accept_bank_change
 	cli
 	rts
 status_crc
@@ -333,7 +331,7 @@ status_crc
 	lda #'o'
 	plp
 	seq
-	lda #'!'
+	lda #'!'+128
 	jsr outchar
 	lda #','
 	jmp outchar
@@ -349,14 +347,12 @@ CALCCRC ; c=1 - write; c=0 - check
 	mwa #_SOURCE _tsrc
 	mwa #$2000 _tcnt
 crccont	mwa #$ffff crc16.crc
-_tsrc	equ * + 1
-	lda $ffff
+	lda _tsrc:$ffff
 	jsr crc16.updCRC
 	inw _tsrc
 	dew _tcnt
 	bne _tsrc -1
-calccrc_bank	equ * +1
-	lda #$ba ;nk number
+	lda calccrc_bank:#$ba ;nk number
 	asl
 	tax
 	plp
@@ -371,11 +367,12 @@ crccheck
 
 printBank_t
 	lda _tbanknum
-	bpl @+
+	bpl skip
 printBank
 	jsr printnl
-	lda BankNum
-@	pha
+	jsr GetBankNumToX
+	txa
+skip	pha
 	lda #'B'
 	jsr outchar
 	pla
@@ -387,18 +384,19 @@ MAIN_PROCESS
 	;mva #0 dmactls
 	;sta dmactl
 	sec
-	mva BankNum calccrc_bank
+	jsr GetBankNumToX
+	stx calccrc_bank
 	jsr CALCCRC
 	mwa #_DEST flashaddr
 	jsr printBank
 
 	lda operation
-	cmp #select
-	jeq VERIFY
+	;cmp #select
+	;jeq VERIFY
 
 	cmp #option
 	jeq CHECKINIT
-
+	; START (was CONSOL & !OPTION, so START)
 FORMATTED
 	mwa #_SOURCE _writeaddr
 	lda _writeaddr+1
@@ -408,15 +406,13 @@ FORMATTED
 	mwa #_DEST flashaddr
 	; sec
 formatted_next
-	ldx BankNum
+	jsr GetBankNumToX
 formatted_next2
-_writeaddr	equ *+1
-	lda $ffff
+	lda _writeaddr:$ffff ; this is source address
 	jsr flashwritebyte
 	jsr flashincaddr
 	inw _writeaddr
-_cmpaddr	equ * + 1
-	lda #$ff
+	lda _cmpaddr:#$ff ; this is the page to end
 	cmp _writeaddr+1
 	bne formatted_next2
 	jsr flashend
@@ -462,8 +458,25 @@ badcompare_tmp2 equ 	* +1
 	icl 'crc16_v2.asm'
 	icl 'print2.asx'
 
+bank_order_tab
+.if .not .def BANK_ORDER
+	.rept 128
+	.byte .R
+	.endr
+.else
+	BANK_ORDER
+.endif
+
+GetBankNumToX
+	ldx BankNum
+	lda bank_order_tab,x
+	tax
+	rts
+
 	org $2e2
 	dta a(STARTFLASHWRITE)
+
+
 ; ---------------------------------------
 ; blocks for every 8kb bank
 .rept BANKS, #
@@ -472,10 +485,9 @@ badcompare_tmp2 equ 	* +1
 ;------------
         org BankNum
         dta b(:1)
-        dta b(1) ; Counter
 ;------------
         org _SOURCE
-	BANKS_FILE(:1)
+	BANKS_FILE :1
 ;------------
         org $2e2
         dta a(MAIN_PROCESS)

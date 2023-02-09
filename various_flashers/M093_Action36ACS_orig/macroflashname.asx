@@ -4,17 +4,16 @@
 ; D504 A000 20 dd offset $2000
 ; All: B000 36 01 offset $3000
 ;
-.define TITLE	dta c'BASICXE 4.1'
+.define TITLE	dta c'Action36ACS'
 .define CARTSIZE dta c'>=128'
 .define BANKS	3
-.define BANK_ORDER	.byte 0,1,9
+.define BANK_ORDER	.byte 0,3,9
 
 .define	label0	+$1000
 .define	label1	+$3000
 .define	label2	+$2000
 
 .macro BANKS_FILE
-	ins "BASIC XE 4.1.rom",label:1,$1000
-	ins "BASIC XE 4.1.rom",+$0000,$1000
+	ins "ACTION-36-ROM-OSS.rom",label:1,$1000
+	ins "ACTION-36-ROM-OSS.rom",+$0000,$1000
 .endm
-

@@ -1,5 +1,7 @@
 .define TITLE	dta c'Space Harrier'
 .define CARTSIZE dta c'1024'
 .define BANKS	128
-.define BANKS_FILE ins "Space Harrier (2011-07-05)(Hutt, Chris)(GB)[f for older cartridges Tucker, Steve 2011-07-23][!].bin",+:1*8192,8192
 .define TWOCHIPS
+.macro BANKS_FILE
+	ins "Space Harrier (2011-07-05)(Hutt, Chris)(GB)[f for older cartridges Tucker, Steve 2011-07-23][!].bin",+:1*8192,8192
+.endm

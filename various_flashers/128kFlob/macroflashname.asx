@@ -1,4 +1,6 @@
 .define TITLE	dta c'Flob'
 .define CARTSIZE dta c'>=128'
 .define BANKS	16
-.define BANKS_FILE ins "flob128k.bin",+:1*8192,8192
+.macro BANKS_FILE
+	ins "flob128k.bin",+:1*8192,8192
+.endm

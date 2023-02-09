@@ -1,38 +1,13 @@
 .define TITLE	dta c'Action! 3.6'
 .define CARTSIZE dta c'>=128'
-.define BANKS	0
+.define BANKS	3
+.define BANK_ORDER	.byte 0,3,4
 
-.macro CUSTOM_CART_LAYOUT
-	org BankNum
-	dta b(0) ; $d500
-	dta b(1) ; Counter
-;------------	
-	org _SOURCE
-	ins "action.bin",+$0000+$0,$1000
+.define	label0	+$0000
+.define	label1	+$1000
+.define	label2	+$2000
+
+.macro BANKS_FILE
+	ins "action.bin",label:1+$0,$1000
 	ins "action.bin",+$3000+$0,$1000
-;------------
-	org $2e2
-	dta a(MAIN_PROCESS)
-;------------
-	org BankNum
-	dta b(3) ; d503
-	dta b(1) ; Counter
-;------------	
-	org _SOURCE
-	ins "action.bin",+$1000+$0,$1000
-	ins "action.bin",+$3000+$0,$1000
-;------------
-	org $2e2
-	dta a(MAIN_PROCESS)
-;------------
-	org BankNum
-	dta b(4) ; $d504
-	dta b(1) ; Counter
-;------------	
-	org _SOURCE
-	ins "action.bin",+$2000+$0,$1000
-	ins "action.bin",+$3000+$0,$1000
-;------------
-	org $2e2
-	dta a(MAIN_PROCESS)
 .endm

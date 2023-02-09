@@ -325,10 +325,10 @@ byte_differs
 	jsr flashprocessbyte ; WRITE BYTE INVOKED !
 
 wait4flashcheckresult ; sei mode
-	mva #0 flashcnt
+	mva #0 flashcnt ; reset counter
 	sta flashcnt+1
 	; ldy #1 ; first time wait short first turn to speed up byte write.
-	beq @+
+	beq skipwsync
 
 flashwaitfordone
 	; WARNING! 29f040 erases even 10 seconds!
@@ -347,35 +347,31 @@ flashwaitfordone
 
 	;ldy#250
 	sta WSYNC
-@	
+skipwsync	
 	;lda #flash_wait_unit
 	;jsr jsrtovectorproc
 	FEEDBACK
 	;dey
 	;bne @-
 	
-@	
-
 	ldy #{ lda.w }
 	jsr flashprocessbyte
 	sta flashval
 	ldy #{ eor.w }
 	jsr flashprocessbyte
 	inc flashcnt
-	bne @+
+	bne cont
 	inc flashcnt+1
-	bne @+
+	bne cont
 		jsr flashcartoff
 		lda #$ff ; status
 		rts
-@
+cont
 	and #$40
 	bne flashwaitfordone
 	jsr flashcartoff
-flashval	equ *+1
-	lda #0
-flashcmp	equ *+1
-	cmp #0
+	lda flashval:#0
+	cmp flashcmp:#0
 ; when byte compare non zero = error
 	rts
 

@@ -1,0 +1,8 @@
+Budowa kartridza nie wymaga chyba komentarza. Plik testxl.epr zawiera dane 
+do zaprogramowania epromu.
+
+Istotne jest dokadne wykonanie wtykow testowych i ich odpowiednie oznaczenie. 
+Wtyk J1 wkladamy do portu joysticka 0, J2 do portu 1. Zamiana spowoduje bledy 
+podczas testow. Wtyk P! wkladamy do portu PERIPHERAL (SIO). Zycze owocnych 
+testow.
+Jer

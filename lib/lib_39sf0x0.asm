@@ -13,7 +13,7 @@ M_VECTORS_39SF
 	jmp flash_wait_unit_29F
 	dta c'39SF0x0',0
 
-flashoppreamble_39SF
+flashoppreamble_39SF ; preserves X
 	pha
 	lda #C_BYTE_PROG_39SF
 	scc

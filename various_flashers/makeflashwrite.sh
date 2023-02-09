@@ -10,7 +10,7 @@ catalog=$(dirname "$outfile")
 outfile=$(basename "$outfile")flasher
 cd "$dirname"
 
-mads ../../lib/flashwrite.asx -m:macroflashname.asx -o:"$outfile".xex || exit
+mads -m:macroflashname.asx ../../lib/flashwrite.asx -o:"$outfile".xex || exit
 
 echo Created file "$outfile".xex
 #cd "$oldpwd"

@@ -1,5 +1,7 @@
 .define TITLE	dta c'Missile Command'
 .define CARTSIZE dta c'>=128'
 .define BANKS	1
-.define BANKS_FILE ins "missile.bin",+:1*8192,8192
+.macro BANKS_FILE
+	ins "missile.bin",+:1*8192,8192
+.endm
 

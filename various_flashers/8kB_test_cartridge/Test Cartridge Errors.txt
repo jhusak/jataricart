@@ -1,0 +1,33 @@
+				KODY B£ÊDÓW DIAGNOSTYCZNYCH
+
+					B£ÊDY SYSTEMU
+
+
+01 	B³¹d synchronizacji poziomej lub pionowej ANTIC-a.
+02 	B³¹d przerwania wygaszania pionowego ANTIC-a
+03 	B³¹d przerwañ DISPLAY LIST ANTIC-a
+04 	B³¹d zapisu lub odczytu strony 0 lub 1 RAM
+05 	B³¹d linii danych. Mo¿liwe uszkodzenie RAM.
+06 	B³¹d linii adresowych lub b³¹d dekodowania adresu (uszkodzenie RAM)
+07 	B³¹d odœwie¿ania przy zapisie bajtu 00
+08 	B³¹d odœwie¿ania przy zapisie bajtu FF
+10      B³¹d zapisu rejestru statusu b³êdów. Uszkodzenie RAM
+11      Wykryto b³¹d podczas testu timerów POKEY-a
+12      B³¹d przerwañ POKEY-a
+
+					B£ÊDY PORTÓW
+
+34 	B³¹d komunikacji szeregowej. Uszkodzenie linii DATA IN lub DATA OUT lub 	uszkodzony POKEY.
+35 	B³¹d sterowania komunikacj¹ szeregow¹. Uszkodzona linia PROCEED, INTERRUPT 	lub COMMAND. Uszkodzony uk³ad PIA lub POKEY.
+36 	B³¹d sterowania komunikacj¹ szeregow¹. W ka¿dym przypadku wyst¹pienia 	b³êdu nr 35 mo¿e wyst¹piæ równie¿ b³¹d 36. Gdy b³¹d 35 nie wystêpuje - 	uszkodzony POKEY lub linia IRQ do procesora b¹dŸ sam procesor.
+37 	B³¹d portu joysticka. Uszkodzone jest gniazdo, linie ³¹cz¹ce je z PIA lub 	PIA.
+38 	Uszkodzenie wejœæ potencjometrycznych (paddle). Uszkodzone gniazdo, linie 	³¹cz¹ce lub POKEY.
+39 	B³êdne dzia³anie przycisku FIRE. Gniazdo, linie ³¹cz¹ce lub GTIA 	uszkodzone.
+
+
+
+	B³êdy 34-39 mog¹ wyst¹piæ przy z³ym kontakcie wtyku kontrolnego (loop-back) lub jego uszkodzeniu.
+
+	Sporo informacji mo¿na uzyskaæ z SELF TEST-u komputera (o ile dzia³a). Typowym tego przyk³adem mo¿e byæ uszkodzenie pamiêci  sygnalizowane czerwonymi kwadratami. Ale i inne objawy, jak np. znaczne przyspieszenie testu dŸwiêku (uszkodzony procesor, a nie POKEY), czy pojawienie siê kwadracików na ca³ym ekranie testu RAM (uszkodzony MMU) mog¹ daæ wiele do myœlenia.
+	Czêsto zdarza siê, ¿e komputer jest "martwy", ale uruchomienie go z kartrid¿em pozwala wykryæ przyczynê. Z regu³y dzieje siê tak przy uszkodzeniu jednej z kostek RAM. Na ekranie pojawi siê np. ERROR CODE 06. Tu przyda siê klips z dobr¹ kostk¹ RAM-u nak³adany kolejno na pamiêci (oczywiœcie przy wy³¹czonym komputerze). Gdy test uruchomi siê - trzeba wymieniæ kostkê, na której aktualnie znajduje siê klips.
+Czasem pomaga wy³¹czenie komputera na u³amek sekundy  i ponowne jego w³¹czenie.
