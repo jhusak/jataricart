@@ -6,7 +6,7 @@ echo Copy $outfile to card?
 read
 
 while true; do
-[ -d "$vol" ] && cp "$outfile" "$vol"/ATARI/ && { eject;  exit; }
+[ -d "$vol" ] && cp -v "$outfile" "$vol"/ATARI/ && { eject;  exit; }
 echo Waiting for card inserted...
 sleep 1
 

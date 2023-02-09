@@ -175,7 +175,7 @@ FORMAT
 	ldx #0
 	jsr flashformatchip
 	bcs formatfailed
-	jsr flashend ; restores display etc.
+	jsr flashend ; restores display etc. preserves all
 	.if .def TWOCHIPS
 	jsr printdone
 	jsr printformatting
@@ -184,7 +184,7 @@ FORMAT
 	ldx #$40
 	jsr flashformatchip
 	bcs formatfailed
-	jsr flashend ; restores display etc.
+	jsr flashend ; restores display etc. preserves all
 	.endif
 printdone	jsr print
 	dta c'done:)',$9b,0
@@ -196,6 +196,7 @@ printformatting
 	rts
 
 formatfailed
+	jsr flashend
 	jsr print
 	dta c'failed:(',$9b,'Waiting for reboot...',$9b,0
 	jmp *
@@ -231,7 +232,6 @@ CHECKINIT
 	mwa #_DEST _cdst
 	sei
 CHECK
-
 	mva #0 badcompare_counter
 	sta badcompare_counter+1
 	ldx BankNum
@@ -241,21 +241,25 @@ _csrc	equ * + 1
 	lda $6000 ; src
 _cdst	equ * + 1
 	cmp $A000 ; dst
-	beq @+
+	beq _byte_ok
 	lda _csrc
 	ldx _csrc+1
 	jsr BADCOMPARE
-@	inw _csrc
+_byte_ok
+	inw _csrc
 	inw _cdst
 	lda _csrc+1
 	cmp #>_SOURCE+$20
 	bne checkloop
 	cpw #0 badcompare_counter
-	beq @+
+	beq _all_bytes_ok
+	; several differences found...
+	; cart off
 	sta $d580
 	lda $d013
 	sta $3fa
 	cli
+	; print status
 	jsr print
 	dta 253,c'non-match byte#:',0
 	lda badcompare_counter+1
@@ -266,13 +270,14 @@ _cdst	equ * + 1
 	dta c' (START-cont)',0
 
 	lda #7
-	cmp CONSOL
+	cmp CONSOL ; wait for consol
 	req
 
 	jsr printnl
 	sec
 	rts
-@	sta $d580
+_all_bytes_ok
+	sta $d580
 	lda $d013
 	sta $3fa
 	cli
@@ -351,7 +356,7 @@ _tsrc	equ * + 1
 	dew _tcnt
 	bne _tsrc -1
 calccrc_bank	equ * +1
-	lda #$ba ; nk number
+	lda #$ba ;nk number
 	asl
 	tax
 	plp

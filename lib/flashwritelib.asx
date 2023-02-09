@@ -145,22 +145,26 @@ flashformatchip1
 ; PROCEDURE
 ; x = 0 or 0x40 - flash chip address.
 flashformatchip
-
-	sei
+	; first check if not formatted
 	stx store_x
+	jsr flashcheckempty
+	bcc flashformatexit
+	sei
 	sec ; will format flash!
+	ldx store_x
 	lda #flashoppreamble
 	jsr jsrtovectorproc ; preserves A
 	; not needed to mva $ff flashcmp
 	jsr wait4flashcheckresult ; waits for format finished
 	; then check number of banks for FFs
+flashcheckempty
 	lda #$3f ; this depends on flash size, $0f, $1f, $3f
 	sta flashformatcounter
 flashbankloop	sei
 	ldx store_x
 flashformatcounter equ*+1
 	sta $d5FF,x ; set chip (x) and bank
-	; set pages count
+	; set pages count, 8kB
 	ldy #$20
 	; reset address
 	lda #$a0
@@ -170,7 +174,17 @@ flashformatcounter equ*+1
 	bcs flashformatexit ; format error if c set
 	dec flashformatcounter
 	bpl flashbankloop
-flashformatexit	jmp flashcartoff ; preserves C
+flashformatexit
+flashcartoff ; preserves C
+	pha
+	sta $d580
+	lda $d013
+	sta $3fa
+	cli
+	pla
+	rts
+
+; --------------------------
 store_x	dta 0
 	
 ; --------------------------
@@ -397,14 +411,5 @@ flashsetbank
 	sta $d500,x
 	lda $d013
 	sta $3fa
-	rts
-
-flashcartoff
-	pha
-	sta $d580
-	lda $d013
-	sta $3fa
-	cli
-	pla
 	rts
 
