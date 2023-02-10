@@ -403,6 +403,13 @@ flashsetaddr
 	sty flashaddr+1
 	rts
 
+flashunlockchip
+	lda #flash_unlockchip
+	jmp jsrtovectorproc
+flashlockchip
+	lda #flash_lockchip
+	jmp jsrtovectorproc
+
 flashsetbank
 	sta $d500,x
 	lda $d013

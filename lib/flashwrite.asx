@@ -407,6 +407,7 @@ FORMATTED
 	; sec
 formatted_next
 	jsr GetBankNumToX
+	jsr flashunlockchip
 formatted_next2
 	lda _writeaddr:$ffff ; this is source address
 	jsr flashwritebyte
@@ -416,6 +417,7 @@ formatted_next2
 	cmp _writeaddr+1
 	bne formatted_next2
 	jsr flashend
+	jsr flashlockchip
 	jmp COMPARE_CRC16_DEST_ALL
 
 FINISH_PROCESS
