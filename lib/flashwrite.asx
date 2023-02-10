@@ -47,7 +47,7 @@ STARTFLASHWRITE
 	TITLE+128
 	dta $9b,c'JatariCart/MaxFlash flasher'
 	dta $9b
-	dta c'by JHusak, 09.02.2023'
+	dta c'by JHusak, 10.02.2023'
 	dta $9b
 	dta c'JatariCart of size '
 	CARTSIZE+128
