@@ -15,7 +15,7 @@ The cartridge is driven by addresses D500-D580; write to D500 sets the first ban
 The J(atari)Cart first came in size max 256 kB (6 line flip flop); then the second version of pcb was created with 8-bit flip-flop with max capacity of 1MB.
 Current Atari-programmable cartridge pcbs are gold-plated J(atari)cart1MB ones. They have two memory chip sockets available. In first socket you can place either 27c0x0 prom for read only memory (then there is no possibility to program it by Atari machine, you must use external prom programmer) or flash eeprom for read-write memory. In second socket you can place either flash or prom read only memory as well. Or nothing. The first (boot) memory can be hardware write-protected, when you want to have rom functionality in first half, but wnat to use flash memories. There is no such feature for second memory chip (always possible read/write when flash chip used).
 
-However and ever, you can sit two 39SF040 flash chips to have 1 MB of flash memory, (almost: old MaxFlash booting from last bank) fully (Maxflash newer, boot bank 0) compatible with Atari MaxFlash Cartridges (Space Harrier fully supported!), always first boot bank, remember?
+However and ever, you can sit two 39SF040 flash chips to have 1 MB of flash memory, (almost: old MaxFlash booting from last bank) fully (Maxflash newer, boot bank 0) compatible with Atari MaxFlash Cartridges (Space Harrier fully supported!), always first boot bank, remember? In fact, many 1MB cartidge images have a bootstrap in the first or last bank, switching to the right boot bank first, making the images independent on cartridge type.
 
 Summary:
 - first chip can be hardware write-protected even if flash installed (JCart1024)
