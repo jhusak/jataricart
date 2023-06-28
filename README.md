@@ -64,3 +64,7 @@ __The JCart256/1024 is compatible with Atari MaxFlash 8megabits cartridge regard
 
 __Warning: flasher works properly on stock Atari. There were reports that Ultimate 1MB sometimes makes problems, so may other extensions/SO roms.__
 
+__PLEASE use the newest mads (from 2023) because of bug in feature used in former versions resulting in error:__
+
+__``flashwrite.asx (504) ERROR: Cannot open or create file 'acroflashname.asx'``__
+
