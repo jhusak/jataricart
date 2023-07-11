@@ -4,7 +4,7 @@ __The cartridge projest is on heavy development state. Please expect frequent ch
 
 __At the end of 01.2023 heavy rearrangement gas been done. Now DRY rule is fulfilled.__
 
-__There are two memory versions of JatariCart (for now): 39SF0x0 based (JatariCart) and 29F0x0 based (JatariCart A). They are labelled as above.__
+__There are three memory versions of JatariCart (for now): 39SF0x0 based (JCart), 29F0x0 based (JCart A) and 28sf0x0 (JCart B). They are labelled as above.__
 
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
 
@@ -13,13 +13,13 @@ The banking scheme was chosen because it is very simple to handle with 3 raw TTL
 The cartridge is driven by addresses D500-D580; write to D500 sets the first bank - this is default boot bank. Write to D501 sets second bank etc. The max bank is set by write to D57F; write to D580 switches off the cartridge. The banks may have repeated contents if there are less of them than 128.
 
 The J(atari)Cart first came in size max 256 kB (6 line flip flop); then the second version of pcb was created with 8-bit flip-flop with max capacity of 1MB.
-Current Atari-programmable cartridge pcbs are gold-plated J(atari)cart1MB ones. They have two memory chip sockets available. In first socket you can place either 27c0x0 prom for read only memory (then there is no possibility to program it by Atari machine, you must use external prom programmer) or flash eeprom for read-write memory. In second socket you can place either flash or prom read only memory as well. Or nothing. The first (boot) memory can be hardware write-protected, when you want to have rom functionality in first half, but wnat to use flash memories. There is no such feature for second memory chip (always possible read/write when flash chip used).
+Current Atari-programmable cartridge pcbs are gold-plated J(atari)cart1MB ones. They have two memory chip sockets available. In first socket you can place either 27c0x0 prom for read only memory (then there is no possibility to program it by Atari machine, you must use external prom programmer) or flash eeprom for read-write memory. In second socket you can place either flash or prom read only memory as well. Or nothing. The first (boot) memory can be hardware write-protected, when you want to have rom functionality in first half, but want to use flash memories. There is no such feature for second memory chip (always possible read/write when flash chip used).
 
-However and ever, you can sit two 39SF040 flash chips to have 1 MB of flash memory, (almost: old MaxFlash booting from last bank) fully (Maxflash newer, boot bank 0) compatible with Atari MaxFlash Cartridges (Space Harrier fully supported!), always first boot bank, remember? In fact, many 1MB cartidge images have a bootstrap in the first or last bank, switching to the right boot bank first, making the images independent on cartridge type.
+However and ever, you can sit two 39SF040 or 29F040 flash chips to have 1 MB of flash memory, (almost: old MaxFlash booting from last bank) fully (Maxflash newer, boot bank 0) compatible with Atari MaxFlash Cartridges (Space Harrier fully supported!), always first boot bank, remember? In fact, many 1MB cartidge images have a bootstrap in the first or last bank, switching to the right boot bank first, making the images independent on cartridge type. 28SF040 has different protocol, so it is not writable by games designed for AtariMaxFlash.
 
 Summary:
 - first chip can be hardware write-protected even if flash installed (JCart1024)
-- second has no hardware write protection (JCart1024)
+- second chip has no hardware write protection (JCart1024)
 - both chips can be totally different (JCart1024)
 - most 28x, 29x, 39x family work, but for now flashing software is prepared to work with 39sf0x0, 29f0x0, 28sf0x0 memories.
 
@@ -46,7 +46,7 @@ carton (x - bank to switch)
         rts  
 ```
 
-after each access. This will let the system think as cartridge never was switched/removed/inserted. Of course it is better (more convenient) that there is no display list, video memory and no interrupts in the area a000-bfff, which can lead to problems when bank swapping.
+after each access. This will let the system think as cartridge never was switched/removed/inserted. Of course it is better (more convenient) that there is no display list, video memory and no interrupts in the area a000-bfff, which can lead to problems when bank swapping. Also, CRITIC flag should be on for the time of bank on/off.
 
 ## Files and descriptions:
 
