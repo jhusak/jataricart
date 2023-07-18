@@ -1,3 +1,4 @@
 create more universal flasher with either concatenated rom or provided in another file
+add sector format working procedure and restore "select" oprion - verify with update data, only for sectors <8kb.
 
 
