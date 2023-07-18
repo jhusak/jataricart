@@ -11,17 +11,23 @@ num_mems	=	3
 
 ; CONSTANTS
 m_offsets
-	softid_entry	=	0
-	softid_exit	=	3
-	flashoppreamble	=	6
-	flash_lockchip	=	9
-	flash_unlockchip	=	12
-	flash_wait_unit	=	15
-	flash_idstr	=	18
+	; jump table
+	softid_entry		=	0
+	softid_exit		=	3
+	flash_formatchip	=	6
+	flash_formatsector	=	9
+	flash_writebyte		=	12
+	flash_lockchip		=	15
+	flash_unlockchip	=	18
+	flash_wait_unit		=	21
+	; data table
+	; 1 byte
+	flash_sectorsizeMSB	=	24
+	; var bytes 0 terminated
+	flash_idstr		=	25
 
 ; rw section, may be moved to ZP if needed
 M_VECTOR	.word 0
-tmpa		.byte 0
 m_vendor	.byte 0
 m_kind		.byte 0
 m_iter		.byte 0
@@ -130,11 +136,19 @@ jsrtovectorproc
 	adc	#0
 	plp ; restore C
 	pha
-	lda	tmpa
+	lda	tmpa:#0
 	pha
 	php
 	rti
-
+; a - vector value offset
+; returns y-LSB A-MSB
+getvectorvalue
+	clc
+	adc M_VECTOR
+	tay
+	lda M_VECTOR+1
+	adc #0
+	rts
 ; --------------------------
 flashformatchip2
 	ldx #$40
@@ -150,9 +164,8 @@ flashformatchip
 	jsr flashcheckempty
 	bcc flashformatexit
 	sei
-	sec ; will format flash!
 	ldx store_x
-	lda #flashoppreamble
+	lda #flash_formatchip
 	jsr jsrtovectorproc ; preserves A
 	; not needed to mva $ff flashcmp
 	jsr wait4flashcheckresult ; waits for format finished
@@ -162,8 +175,7 @@ flashcheckempty
 	sta flashformatcounter
 flashbankloop	sei
 	ldx store_x
-flashformatcounter equ*+1
-	sta $d5FF,x ; set chip (x) and bank
+	sta flashformatcounter:$d5FF,x ; set chip (x) and bank
 	; set pages count, 8kB
 	ldy #$20
 	; reset address
@@ -184,56 +196,6 @@ flashcartoff ; preserves C
 	pla
 	rts
 
-; --------------------------
-store_x	dta 0
-	
-; --------------------------
-; PROCEDURE
-flashformatsector
-; x - bank number 00 - 7f (even sector>>1)
-; a - erase 4KB from $B000 if A=$B0, FROM $A000 IF A=$A0
-; format 4kb evensector 
-; strange form - easily maps to cartridge banks
-; to format bank, must format sector (x<<1) and (x<<1) +1
-; IT IS LONG because it has to be save, ie not format if formatted etc.
-
-	; first check if all ff
-	; this is to avoid wear
-	stx flashformatstorex
-	sta flashformatstorea
-	sei
-	jsr flashsetbank
-	; store #$a0 or #$b0
-	sta flashformataddrcheck + 2
-	jsr flashchecksectorformatted	
-	bcc flashsectorformatgood
-	sei
-flashformatstorex	equ * + 1
-	ldx #0 ; filled before
-; check least sector bit
-	sec
-	lda #flashoppreamble ; does not touch A,X
-	jsr jsrtovectorproc
-	sta $D500,x
-	; A must be either $A0 or $B0
-flashformatstorea	equ * + 1
-	lda #0 ; filled before
-	sta flashtmpaddr+1
-	sta flashformataddrcheck + 2
-
-	lda #$30
-flashtmpaddr	equ	*+1
-	sta $a000 ; SECTOR FORMAT INVOKED HERE!
-	jsr wait4flashcheckresult ;
-	sei
-
-	lda flashformatstorea
-	sta flashformataddrcheck+2
-	
-	ldx flashformatstorex
-	jsr flashsetbank
-
-	; check if all data in sector is $ff
 flashchecksectorformatted
 	ldy #$10
 flashchecksectorformatted_bare
@@ -249,17 +211,59 @@ flashformataddrcheck
 	dey
 	bne flashformataddrcheck
 	FEEDBACKEND
-
-flashsectorformatgood
-	jsr flashcartoff
 	clc
 	rts
-	
 flashsectorformaterror
 	jsr flashcartoff
 	sec
 	rts
 
+; --------------------------
+store_x	dta 0
+	
+; --------------------------
+; PROCEDURE
+flashformatsector
+; x - bank number 00 - 7f (even sector>>1)
+; a - page number in 128byte units $0-$3f
+; erase sector containing address bank number * $2000 + page number * 128
+
+	stx flashformatstorex
+	sei
+	; calculate lower 13 bits of sector
+	; (address in 8kb bank)
+	ldx #0
+	; convert page in A to cartridge a000-bfff address flashtmpaddr
+	; 0,1 -> 0 ; 2,3 -> 256 ; 4,5 -> 512 etc
+	lsr
+	ora #$A0
+	tay
+	
+	jsr flashsetaddr ;(x/y) store address for write byte to format sector
+	;
+	ldx flashformatstorex:#0 ; filled before, 8k bank number
+
+	lda #flash_formatsector ; does not touch A,X?
+	jsr jsrtovectorproc
+
+	ldy #{ sta.w }
+	jsr flashprocessbyte ; format sector INVOKED !
+	
+
+	jsr wait4flashcheckresult ;
+	;sei
+
+	ldx flashformatstorex
+	jsr flashsetbank
+
+	cli
+	; check if all data in sector is $ff
+
+flashsectorformatgood
+	;jsr flashcartoff
+	clc
+	rts
+	
 .macro FEEDBACK
 	.if (FRAME_FEEDBACK)>=1
 	php
@@ -286,9 +290,11 @@ flashsectorformaterror
 	lda #0
 	sta colbaks
 	sta colbak
+	.if (FRAME_FEEDBACK&2)==2
 	lda #34
 	sta sdmctl
 	sta dmactl
+	.endif
 	pla
 	plp
 	.endif
@@ -315,8 +321,7 @@ byte_differs
 	sta flashcmp
 	sei
 	pha
-	clc ; byte program preamble
-	lda #flashoppreamble ; preserves A,X
+	lda #flash_writebyte ; preserves A,X
 	jsr jsrtovectorproc
 	pla
 	; set right bank
@@ -364,12 +369,14 @@ skipwsync
 	inc flashcnt+1
 	bne cont
 		jsr flashcartoff
+		FEEDBACKEND
 		lda #$ff ; status
 		rts
 cont
 	and #$40
 	bne flashwaitfordone
 	jsr flashcartoff
+	FEEDBACKEND
 	lda flashval:#0
 	cmp flashcmp:#0
 ; when byte compare non zero = error
@@ -412,7 +419,9 @@ flashlockchip
 
 flashsetbank
 	sta $d500,x
+	pha
 	lda $d013
 	sta $3fa
+	pla
 	rts
 

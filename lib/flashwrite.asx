@@ -97,13 +97,13 @@ _check_chips
 ?_next	inc numchips
 	lda numchips
 	clc
-	adc #$30
-	sta chipno
+	adc #'0'
+	sta chipno ; stored as '0'/'1' to print inline
 
 	jsr print
 	dta c'chip '
 chipno
-	dta c'0'
+	dta c'0' ; will be replaced
 	dta c' vend/prod: ',0
 	lda m_vendor
 	jsr printhex
@@ -170,8 +170,7 @@ FORMAT
 	jsr printformatting
 	jsr print
 	dta c'1...',0
-	ldx #0
-	jsr flashformatchip
+	jsr flashformatchip1
 	bcs formatfailed
 	jsr flashend ; restores display etc. preserves all
 	.if .def TWOCHIPS
@@ -179,8 +178,7 @@ FORMAT
 	jsr printformatting
 	jsr print
 	dta c'2...',0
-	ldx #$40
-	jsr flashformatchip
+	jsr flashformatchip2
 	bcs formatfailed
 	jsr flashend ; restores display etc. preserves all
 	.endif
@@ -388,6 +386,9 @@ MAIN_PROCESS
 	stx calccrc_bank
 	jsr CALCCRC
 	mwa #_DEST flashaddr
+	;ldx #<_DEST
+	;ldy #>_DEST
+	;jsr flashsetaddr
 	jsr printBank
 
 	lda operation
