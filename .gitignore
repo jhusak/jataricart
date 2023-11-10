@@ -1,1 +1,6 @@
 .DS_Store
+*.obx
+*.xex
+*.lst
+*.lab
+*.h
