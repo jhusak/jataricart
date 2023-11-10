@@ -1,0 +1,24 @@
+
+_SOURCE	equ	$6000
+BankNum	equ	$88
+MAIN_PROCESS_JMP	equ	$2003
+
+	opt h-
+	org 0
+	;dta a($ffff)
+;------------
+	dta a(BankNum)
+	dta a(BankNum)
+	.print  "#define	BLK_BANKNUM	0x",*
+        dta 0
+;------------
+        dta a(_SOURCE)
+        dta a(_SOURCE+$1fff)
+	.print  "#define	BLK_SOURCE	0x",*
+	:8192	dta 0
+;------------
+	dta a($2e2)
+	dta a($2e3)
+        dta a(MAIN_PROCESS_JMP)
+TEnd
+;------------

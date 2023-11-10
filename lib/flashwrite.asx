@@ -34,6 +34,13 @@ _DEST	equ	$A000
 
 ; test code
 	org $2000
+FINISH_PROCESS_JMP
+	.print "#define	FINISH_PROCESS_JMP	0x",*-$2000+6
+	jmp FINISH_PROCESS
+MAIN_PROCESS_JMP
+	.print "#define	MAIN_PROCESS_JMP	0x",*-$2000+6
+	jmp MAIN_PROCESS
+	.print "#define	STARTFLASHWRITE	0x",*-$2000+6
 STARTFLASHWRITE
 	mva #$A0 106
 	jsr opened
@@ -44,15 +51,18 @@ STARTFLASHWRITE
 	sta 66
 	; waiting for cart to be inserted
 	jsr print
+	.print "#define	TITLE	0x",*-$2000+6
 	TITLE+128
 	dta $9b,c'JatariCart/MaxFlash flasher'
 	dta $9b
 	dta c'by JHusak, 10.02.2023'
 	dta $9b
 	dta c'JatariCart of size '
+	.print "#define	CARTSIZE1	0x",*-$2000+6
 	CARTSIZE+128
 	dta c' kB needed',$9b,$9b
 	dta c'Insert JatariCart of '
+	.print "#define	CARTSIZE2	0x",*-$2000+6
 	CARTSIZE+128
 	dta c' kB...',0
 
@@ -184,7 +194,7 @@ FORMAT
 	.endif
 printdone	jsr print
 	dta c'done:)',$9b,0
-	rts
+	jmp eraseSRC_FF
 
 printformatting
 	jsr print
@@ -281,10 +291,23 @@ dmaon	mva #34 dmactls
 	rts
 
 cartoff_and_accept_bank_change
-	sta $d580
+	sta $d5ff
 accept_bank_change
 	lda $d013
 	sta $3fa
+	rts
+
+eraseSRC_FF
+	mwa #_SOURCE e_csrc
+	lda #$FF
+e_loop
+	sta e_csrc:$6000 ; src
+	inc e_csrc
+	bne e_loop
+	inc e_csrc+1
+	lda e_csrc+1
+	cmp #>_SOURCE+$20
+	bne e_loop
 	rts
 
 VERIFY
@@ -377,7 +400,6 @@ skip	pha
 	jsr printhex
 	lda #':'
 	jmp outchar
-	
 MAIN_PROCESS
 	;mva #0 dmactls
 	;sta dmactl
@@ -419,7 +441,8 @@ formatted_next2
 	bne formatted_next2
 	jsr flashend
 	jsr flashlockchip
-	jmp COMPARE_CRC16_DEST_ALL
+	jsr COMPARE_CRC16_DEST_ALL
+	jmp eraseSRC_FF
 
 FINISH_PROCESS
 	jsr print
@@ -478,6 +501,7 @@ GetBankNumToX
 
 	org $2e2
 	dta a(STARTFLASHWRITE)
+	.print  "#define	END_OF_MAIN_CODE	0x",*-$2000+6
 
 
 ; ---------------------------------------
@@ -493,7 +517,7 @@ GetBankNumToX
 	BANKS_FILE :1
 ;------------
         org $2e2
-        dta a(MAIN_PROCESS)
+        dta a(MAIN_PROCESS_JMP)
 ;------------
         .endl
  .endr
