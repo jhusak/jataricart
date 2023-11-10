@@ -498,10 +498,10 @@ GetBankNumToX
 	lda bank_order_tab,x
 	tax
 	rts
+	.print  "#define	END_OF_MAIN_CODE	0x",*-$2000+6+6
 
 	org $2e2
 	dta a(STARTFLASHWRITE)
-	.print  "#define	END_OF_MAIN_CODE	0x",*-$2000+6
 
 
 ; ---------------------------------------
