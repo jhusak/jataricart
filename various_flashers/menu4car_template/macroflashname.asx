@@ -1,3 +1,5 @@
 .define TITLE	dta c'Menu4Car generated'
 .define CARTSIZE dta c' 1024'
 .define BANKS	0
+.define TWOCHIPS
+.define BANKS_FILE
