@@ -35,12 +35,12 @@ _DEST	equ	$A000
 ; test code
 	org $2000
 FINISH_PROCESS_JMP
-	.print "#define	FINISH_PROCESS_JMP	0x",*-$2000+6
+	.print "#define	FINISH_PROCESS_JMP	0x",*
 	jmp FINISH_PROCESS
 MAIN_PROCESS_JMP
-	.print "#define	MAIN_PROCESS_JMP	0x",*-$2000+6
+	.print "#define	MAIN_PROCESS_JMP	0x",*
 	jmp MAIN_PROCESS
-	.print "#define	STARTFLASHWRITE	0x",*-$2000+6
+	.print "#define	STARTFLASHWRITE	0x",*
 STARTFLASHWRITE
 	mva #$A0 106
 	jsr opened
@@ -183,15 +183,22 @@ FORMAT
 	jsr flashformatchip1
 	bcs formatfailed
 	jsr flashend ; restores display etc. preserves all
+	.print "#define	TWO_CHIPS_SWITCH	0x",*-$2000+6+1
+	.print "#define	TWO_CHIPS_SWITCH_ADDR	0x",*+1
 	.if .def TWOCHIPS
+	lda #1
+	.else
+	lda #0
+	.endif
+	beq ?exit2
 	jsr printdone
 	jsr printformatting
 	jsr print
 	dta c'2...',0
 	jsr flashformatchip2
 	bcs formatfailed
+?exit2
 	jsr flashend ; restores display etc. preserves all
-	.endif
 printdone	jsr print
 	dta c'done:)',$9b,0
 	jmp eraseSRC_FF
@@ -212,6 +219,7 @@ VERIFYREPAIR
 CHECKONLY
 	jsr print
 	dta c'Compare.',$9b,0
+	jsr eraseSRC_FF
 	rts
 
 t_vendor	.byte 0
@@ -243,10 +251,8 @@ CHECK
 	jsr GetBankNumToX
 	sta $d500,x
 checkloop
-_csrc	equ * + 1
-	lda $6000 ; src
-_cdst	equ * + 1
-	cmp $A000 ; dst
+	lda _csrc:$6000 ; src
+	cmp _cdst:$A000 ; dst
 	beq _byte_ok
 	lda _csrc
 	ldx _csrc+1
@@ -278,10 +284,12 @@ _byte_ok
 	req
 
 	jsr printnl
+	jsr eraseSRC_FF
 	sec
 	rts
 _all_bytes_ok
 	jsr cartoff_and_accept_bank_change
+	jsr eraseSRC_FF
 	cli
 	lda #'o'
 	jsr outchar
@@ -299,15 +307,16 @@ accept_bank_change
 
 eraseSRC_FF
 	mwa #_SOURCE e_csrc
+e_loop_init
 	lda #$FF
 e_loop
-	sta e_csrc:$6000 ; src
+	sta e_csrc:$ffff ; src
 	inc e_csrc
 	bne e_loop
 	inc e_csrc+1
 	lda e_csrc+1
 	cmp #>_SOURCE+$20
-	bne e_loop
+	bne e_loop_init
 	rts
 
 VERIFY
@@ -478,7 +487,7 @@ badcompare_tmp2 equ 	* +1
 	jsr printnl
 @	inw badcompare_counter
 	sec
-	jmp dmaon	
+	jmp dmaon ; rts inside dmaon
 ; -------
 	icl 'flashwritelib.asx'
 	icl 'crc16_v2.asm'
@@ -526,4 +535,4 @@ GetBankNumToX
 	CUSTOM_CART_LAYOUT
 	.endif
         org $2e2
-        dta a(FINISH_PROCESS)
+        dta a(FINISH_PROCESS_JMP)

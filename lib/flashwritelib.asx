@@ -291,7 +291,7 @@ flashsectorformatgood
 	sta colbaks
 	sta colbak
 	.if (FRAME_FEEDBACK&2)==2
-	lda #34
+	lda #34		; ???
 	sta sdmctl
 	sta dmactl
 	.endif
@@ -392,9 +392,8 @@ flashprocessbyte
 ; y - byteop for cpu to do with byte 
 ; flashaddr - stored address
 	sty flashbyteop
-flashaddr	equ *+1
 flashbyteop
-	sta $aaaa
+	sta flashaddr:$aaaa
 	rts
 
 flashend
