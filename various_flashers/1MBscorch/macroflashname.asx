@@ -1,0 +1,7 @@
+.define TITLE	dta c'Scorch'
+.define CARTSIZE dta c'1024'
+.define BANKS	128
+.define TWOCHIPS
+.macro BANKS_FILE
+	ins "scorch_XLXE.bin",+:1*8192,8192
+.endm
