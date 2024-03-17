@@ -1,3 +1,5 @@
 Source repository:
 https://github.com/pkali/scorch_src
-current bin is from version https://github.com/pkali/scorch_src/commit/a30705910794c3c99ea1d7b7a8fe24840969a1cb
+current bin is from version 1.50, https://github.com/pkali/scorch_src
+
+This is mainly for use with old AtariMax cartridges, booting from the last-127th  bank.

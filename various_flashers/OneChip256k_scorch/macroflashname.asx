@@ -1,6 +1,6 @@
 .define TITLE	dta c'Scorch'
-.define CARTSIZE dta c'512'
-.define BANKS	64
+.define CARTSIZE dta c'256'
+.define BANKS	24
 .macro BANKS_FILE
 	ins "scorch_XLXE.bin",+:1*8192,8192
 .endm
