@@ -55,7 +55,7 @@ STARTFLASHWRITE
 	TITLE+128
 	dta $9b,c'JatariCart/MaxFlash flasher'
 	dta $9b
-	dta c'by JHusak, 10.02.2023'
+	dta c'by JHusak, version 26.01.2025'
 	dta $9b
 	dta c'JatariCart of size '
 	.print "#define	CARTSIZE1	0x",*-$2000+6
@@ -72,7 +72,7 @@ STARTFLASHWRITE
 	bcc ?wloop
 
 	ldx #$25
-?lloop
+?lloop	; wait 0.5 sec after inserting
 	bit VCOUNT
 	bmi *-3
 	bit VCOUNT
@@ -81,39 +81,45 @@ STARTFLASHWRITE
 	bne ?lloop
 
 	jsr print
-	dta c' inserted.',$9b,0
+	dta $9b,c'Inserted.',$9b,0
 	
 	; cart inserted, fake it was not changed
 	jsr accept_bank_change
 
 	ldx #0 ; chip address
-	stx numchips
+	stx numgoodchipsneeded
 _check_chips
 	stx _storex
 	jsr check_type
-	bcc ?_next
+	bcc ?chip_ok
+	beq ?unrecog2
+?unrecog1
 	jsr print
-	dta c'unrecognized chip: ',0
-	lda m_vendor
-	jsr printhex
-	lda m_kind
-	jsr printhex
-	cpx #$0
-	seq
-		jmp *
-	jsr print
-	dta c'ignoring chip ...',0
-	jmp menu
-?_next	inc numchips
-	lda numchips
+	dta c'no chip #'
+?chipign1
+	dta c'1, ignoring... ',0
 	clc
-	adc #'0'
-	sta chipno ; stored as '0'/'1' to print inline
+	bcc ?common
 
+?unrecog2
 	jsr print
-	dta c'chip '
-chipno
-	dta c'0' ; will be replaced
+	dta c'unknown chip #'
+?chipign2
+	dta c'1 protocol, ignoring...',0
+
+?common
+	lda #0
+	sta m_vendor
+	sta m_kind
+	jmp ?exit
+?chip_ok
+	lda numgoodchipsneeded
+	ora goodchipsmask
+	sta numgoodchipsneeded
+	jsr print
+	dta c'chip #'
+?chipno
+	dta c'1' ; will be incremented if TWOCHIPS defined
 	dta c' vend/prod: ',0
 	lda m_vendor
 	jsr printhex
@@ -131,7 +137,7 @@ chipno
 	adc #0
 	sta ?taddr+1
 	ldy #0
-?loop	; write string onscreen till 0
+?loop	; write string onscreen, 0-ended
 	lda ?taddr:$ffff,y
 	beq ?exit
 	sty st_y
@@ -142,22 +148,52 @@ chipno
 ?exit
 	jsr printnl
 	ldx _storex
-	cpx #0
-	bne menu
+
+	asl goodchipsmask
+
+	cpx #$40
+	beq menu
 	lda m_vendor
 	sta t_vendor
 	lda m_kind
 	sta t_kind
+	inc ?chipno
+	inc ?chipign1
+	inc ?chipign2
 	ldx #$40
 	jmp _check_chips
 menu
+	lda numgoodchipsneeded
+	.if .def TWOCHIPS
+	cmp #3 ; two chips needed
+	.else
+	and #1
+	cmp #1 ; at least first chip needed
+	.endif
+	beq ?cont
+
+	; FAIL and loop forever
+	jsr print
+	dta $9b
+	dta c'Sorry, recognized chip configuration',$9b
+	dta c'does not suit your binary.',$9b
+	dta c'Your cart needs '
+	.if .def TWOCHIPS
+	dta c'two chips.',$9b
+	.else
+	dta c'at least first chip.',$9b
+	.endif
+	dta c'Please reboot.',$9b,0
+	jmp *
+
+?cont
 	jsr printnl
 	;lda #$ff
 	;sta $d301
 	
 	jsr print
 	dta c'Press:',$9b
-	dta c'START  - format cart and programm',$9b
+	dta c'START  - cartridge format and flash!',$9b
 	;dta c'SELECT - verify; repair bad blocks.',$9b
 	dta c'OPTION - verify',$9b,0
 ?wloop	lda 53279
@@ -224,7 +260,8 @@ CHECKONLY
 
 t_vendor	.byte 0
 t_kind		.byte 0
-numchips	.byte 0
+numgoodchipsneeded	.byte 0
+goodchipsmask	.byte 1
 _storex		.byte 0
 
 crcsums

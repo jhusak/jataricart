@@ -30,7 +30,6 @@ m_offsets
 M_VECTOR	.word 0
 m_vendor	.byte 0
 m_kind		.byte 0
-m_iter		.byte 0
 
 ; ro section again
 ; Protocols for known kinds of memory:
@@ -66,17 +65,22 @@ M_CHECK_VECS	.word  M_VECTORS_39SF, M_VECTORS_29F, M_VECTORS_28SF
 ; --------------------------
 ; PROCEDURE
 ; x = 0 or 0x40 - flash chip address.
-; stores proper vector table pointer if worked
+; stores proper vector table pointer
 ; this fails only when somebody stores vendor and product bytes
 ; at the proper cells.
+; The second case is that there is no mem at all.
+; Then two cases are possible: random number OR fixed ff.
 ;
 ; then in the code we call lda #offset/jsr jsrtovectorproc
+	.if 0
 check_type
 	ldy #(2*(num_mems-1))
 ?again
 	sty m_iter
+?again_loop
 	; store default values
-	jsr flashsetbank
+	jsr flashsetbank0
+	; load real values, may be random if no chip.
 	lda $a000
 	sta m_vendor
 	lda $a001
@@ -84,7 +88,7 @@ check_type
 	
 	jsr jsrtosoftidentry
 
-	jsr flashsetbank
+	jsr flashsetbank0
 	lda $a000 ; vendor
 	cmp m_vendor
 	sta m_vendor
@@ -100,13 +104,108 @@ check_type
 	dey
 	bpl	?again
 	; error
-	sec
+	sec	; failed, no chip 
 	rts
+
+?check_again
+	; if zero, decrement check_bad_counter
+	sne
+	dec check_bad_counter
+	dec check_counter
+	bne ?again_loop
+	lda check_bad_counter
+	cmp #CNTINIT
+	; if check_counter is 0 and check_bad_counter is CNTINIT then ok, else
+	; go to ?next
+	bne ?next
+	.endif
+
+
+
+check_type
+	ldy #(2*(num_mems-1))
+?again
+	sty ?m_iter
+
+	lda #0
+	sta ?or_val
+	sta ?or_val+1
+	sta ?c_iter
+	lda #$ff
+	sta ?and_val
+	sta ?and_val+1
+?repeat
+	jsr flashsetbank0
+	jsr jsrtosoftidentry
+
+	lda $A000
+	sta ?_id_m
+	lda $A001
+	sta ?_id_m+1
+
+	jsr jsrtosoftidexit
+
+	lda $A000
+	sta ?_no_m
+	lda $A001
+	sta ?_no_m+1
+
+	lda ?_id_m
+	and:sta ?and_val
+
+	lda ?_id_m+1
+	and:sta ?and_val+1
+
+	lda ?_id_m
+	ora:sta ?or_val
+
+	lda ?_id_m+1
+	ora:sta ?or_val+1
+	
+
+	dec ?c_iter
+	bne ?repeat
+;@
+;	lda #$ff
+;	sta $d01a
+;	lda #0
+;	sta $d01a
+;	jmp @-
+	cpw ?and_val ?or_val
+	bne ?next_chip ; empty slot, random values, no chip, check next chip
+	cpw ?and_val ?_no_m
+	beq ?next_chip ; the came content, stable values, no response so no chip, check next chip
+
 ?OK
+	lda ?_id_m
+	sta m_vendor
+	lda ?_id_m+1
+	sta m_vendor+1
 	lda	M_CHECK_VECS+1,y
 	sta	M_VECTOR+1
 	lda	M_CHECK_VECS,y
 	sta	M_VECTOR
+	clc
+	rts
+
+?next_chip
+	php ; store zero flag
+	pla
+	ldy ?m_iter
+	dey
+	dey
+	jpl ?again
+	pha ; restored zero flag
+	plp
+	sec
+	rts
+
+?or_val	dta	0,0
+?and_val	dta	0,0
+?_id_m	dta	0,0
+?_no_m	dta	0,0
+?c_iter		.byte 0
+?m_iter		.byte 0
 
 jsrtosoftidexit
 	lda	#softid_exit
@@ -116,10 +215,14 @@ jsrtosoftidexit
 	clc
 	rts
 
+	
+
 jsrtosoftidentry
        lda M_CHECK_VECS+1,y ; first is softid entry
+       sta M_VECTOR+1
        pha
        lda M_CHECK_VECS,y ; first is softid entry
+       sta M_VECTOR
        pha
        php
        rti ; jsr to tabled func
@@ -254,7 +357,7 @@ flashformatsector
 	;sei
 
 	ldx flashformatstorex
-	jsr flashsetbank
+	jsr flashsetbank0
 
 	cli
 	; check if all data in sector is $ff
@@ -416,7 +519,7 @@ flashlockchip
 	lda #flash_lockchip
 	jmp jsrtovectorproc
 
-flashsetbank
+flashsetbank0
 	sta $d500,x
 	pha
 	lda $d013
