@@ -54,11 +54,15 @@ dosini	=	$0C	; (2) wektor inicjacji po odczycie z dyskietki
 
 rtclok	=	$12	; (3) zegar czasu rzeczywistego
 
+critic  =   $42 ; znacznik krytycznych czasowo operacji I/O
+
 lmargin	=	$52
 rmargin	=	$53
 rowcrs	=	$54	; wiersz  kursora
 colcrs	=	$55	; (2) Kolumna kursora
 savmsc	=	$58	; (2) Adres pamiêci obrazu
+
+ramtop  =   $6A ; liczba stron pamiêci RAM
 
 keydef	=	$79	; (2) tablica konwersji kod?w klawiatury na ATASCII
 
@@ -123,6 +127,8 @@ icax3	=	$034C	; rejestr pomocniczy dla operacji I/O
 icax4	=	$034D	; rejestr pomocniczy dla operacji I/O
 icax5	=	$034E	; rejestr pomocniczy dla operacji I/O
 icax6	=	$034F	; rejestr pomocniczy dla operacji I/O
+
+gintlk  =   $03FA   ; znacznik cartridge'a (kopia TRIG3)
 
 casbuf	=	$0400	; bufor magnetofonu
 casben	=	$047F	; koniec bufora magnetofonu

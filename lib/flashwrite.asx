@@ -42,13 +42,13 @@ MAIN_PROCESS_JMP
 	jmp MAIN_PROCESS
 	.print "#define	STARTFLASHWRITE	0x",*
 STARTFLASHWRITE
-	mva #$A0 106
+	mva #$A0 ramtop
 	jsr opened
-	lda 20
-@	cmp 20
+	lda rtclok+2
+@	cmp rtclok+2
 	beq @-
 @	lda #$1
-	sta 66
+	sta critic
 	; waiting for cart to be inserted
 	jsr print
 	.print "#define	TITLE	0x",*-$2000+6
@@ -66,25 +66,29 @@ STARTFLASHWRITE
 	CARTSIZE+128
 	dta c' kB...',0
 
+    lda #$00
+    sta nmien
 	sta $d500
-?wloop	lda $d013
+?wloop	lda trig3
 	lsr
 	bcc ?wloop
-
+	; cart inserted, fake it was not changed
+	jsr accept_bank_change
+    lda #$40
+    sta nmien
+    
 	ldx #$25
 ?lloop	; wait 0.5 sec after inserting
-	bit VCOUNT
-	bmi *-3
-	bit VCOUNT
-	bpl *-3
+@	bit VCOUNT
+	bmi @-
+@	bit VCOUNT
+	bpl @-
 	dex
 	bne ?lloop
 
 	jsr print
 	dta $9b,c'Inserted.',$9b,0
 	
-	; cart inserted, fake it was not changed
-	jsr accept_bank_change
 
 	ldx #0 ; chip address
 	stx numgoodchipsneeded
@@ -196,7 +200,7 @@ menu
 	dta c'START  - cartridge format and flash!',$9b
 	;dta c'SELECT - verify; repair bad blocks.',$9b
 	dta c'OPTION - verify',$9b,0
-?wloop	lda 53279
+?wloop	lda consol
 	cmp #7
 	beq ?wloop
 	sta operation
@@ -268,14 +272,14 @@ crcsums
 	:128	.word 0
 opened	
 	ldx	#0
-	lda 	#12
-	jsr 	icio
-	mwa 	#name	icbufa,x
-	mva 	#$0c	icax1,x
-	mva 	#$0	icax2,x
-	lda 	#3
-icio	sta	iccmd,x
-	jmp 	$e456
+	lda #12
+	jsr icio
+	mwa #name icbufa,x
+	mva #$0c icax1,x
+	mva #$0	icax2,x
+	lda #3
+icio    sta	iccmd,x
+	jmp ciov
 name	dta 'E:',$9b
 
 CHECKINIT
@@ -338,8 +342,8 @@ dmaon	mva #34 dmactls
 cartoff_and_accept_bank_change
 	sta $d5ff
 accept_bank_change
-	lda $d013
-	sta $3fa
+	lda trig3
+	sta gintlk
 	rts
 
 eraseSRC_FF
@@ -497,7 +501,7 @@ FINISH_PROCESS
 	rts
 badcompare_counter	dta 0,0
 BADCOMPARE
-	ldy 53279
+	ldy consol
 	cpy #7
 	beq @+
 	pha
