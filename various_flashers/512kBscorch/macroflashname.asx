@@ -1,4 +1,4 @@
-.define TITLE	dta c'Scorch v1.51'
+.define TITLE	dta c'Scorch v1.52'
 .define CARTSIZE dta c'512'
 .define BANKS	64
 .macro BANKS_FILE
