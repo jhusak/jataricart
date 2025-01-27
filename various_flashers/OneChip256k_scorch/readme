@@ -1,0 +1,6 @@
+Source repository, develop branch:
+
+https://github.com/pkali/scorch_src
+current bin is from version 1.50, https://github.com/pkali/scorch_src
+
+This is for use with 1MB AtariMax cartridge (booting from either 0 or 127 bank) as well as jataricart 256/1024.

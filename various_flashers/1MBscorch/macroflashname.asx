@@ -3,5 +3,5 @@
 .define BANKS	128
 .define TWOCHIPS
 .macro BANKS_FILE
-	ins "scorch_XLXE.bin",+:1*8192,8192
+	ins "../OneChip256k_scorch/scorch_XLXE.bin",+:1*8192,8192
 .endm
