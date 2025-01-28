@@ -2,4 +2,4 @@ Source repository:
 https://github.com/pkali/scorch_src
 current bin is from version https://github.com/pkali/scorch_src/commit/a30705910794c3c99ea1d7b7a8fe24840969a1cb
 
-mads -m:macroflashname.asx -t -l ../../lib/flashwrite.asx -o:512kBscorchflasher.xex
+mads -m:macroflashname.asx -t -l ../../lib/flashwrite.asx -o:256kBscorchflasher.xex
