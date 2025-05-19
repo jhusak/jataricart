@@ -214,9 +214,8 @@ flashformataddrcheck
 	clc
 	rts
 flashsectorformaterror
-	jsr flashcartoff
 	sec
-	rts
+	jmp flashcartoff
 
 ; --------------------------
 store_x	dta 0
@@ -313,20 +312,17 @@ flashwritebyte
 	ldy #{ cmp.w }
 	jsr flashprocessbyte
 	bne byte_differs
-	sta $D580
-	cli
-	clc
-	rts
+	jmp flashcartoff
 byte_differs
 	sta flashcmp
 	sei
 	pha
 	lda #flash_writebyte ; preserves A,X
 	jsr jsrtovectorproc
-	pla
 	; set right bank
 	sta $D500,x
 	ldy #{ sta.w }
+	pla
 	jsr flashprocessbyte ; WRITE BYTE INVOKED !
 
 wait4flashcheckresult ; sei mode
@@ -337,7 +333,7 @@ wait4flashcheckresult ; sei mode
 
 flashwaitfordone
 	; WARNING! 29f040 erases even 10 seconds!
-	; approx 100ms in overall for chip erase:
+	; approx 100ms single loop in overall for chip erase:
 	; as many cycles needed, as 256*cycles >100ms * (1+epsilon)
 	; 100 ms is 180000 cycles
 	; so max 256 rough loops must last longer
@@ -345,6 +341,7 @@ flashwaitfordone
 	; 700 cycles by 6 cycles loop lasts = 116.
 	; so flipipng values, and adding margin,
 	; we count 128*6 cycles in inner loop.
+	; Then max timeout is 256*~105ms = ~28 seconds.
 	; max sector erase by datasheet: 25 ms
 	; max chip erase by datasheet: 100 ms 39sf040
 	; max chip erase by datasheet: 20 ms 28sf040
@@ -368,10 +365,9 @@ skipwsync
 	bne cont
 	inc flashcnt+1
 	bne cont
-		jsr flashcartoff
 		FEEDBACKEND
 		lda #$ff ; status
-		rts
+		jmp flashcartoff
 cont
 	and #$40
 	bne flashwaitfordone
@@ -412,6 +408,7 @@ flashsetaddr
 flashunlockchip
 	lda #flash_unlockchip
 	jmp jsrtovectorproc
+
 flashlockchip
 	lda #flash_lockchip
 	jmp jsrtovectorproc
