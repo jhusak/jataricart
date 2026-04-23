@@ -10,7 +10,9 @@ catalog=$(dirname "$outfile")
 outfile=$(basename "$outfile")flasher
 cd "$dirname"
 
-! mads -m:macroflashname.asx -t -l ../../lib/flashwrite.asx -o:"$outfile".xex && echo >/dev/stderr ERROR! && exit 1
+{ ! mads -m:macroflashname.asx -t -l ../../lib/flashwrite.asx -o:"$outfile".xex && echo >/dev/stderr ERROR! && false ; } | sed 's/\$/0x/g'
+
+[ ${PIPESTATUS[0]} ]  &&  exit 1
 
 echo >/dev/stderr Created file "$outfile".xex
 #cd "$oldpwd"
