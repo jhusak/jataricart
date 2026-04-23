@@ -58,6 +58,7 @@ flash_format_exit_29F
 	sta $d500,x
 flash_lockchip_29F
 flash_unlockchip_29F
+	sec
 	rts
 
 flash_wait_unit_29F

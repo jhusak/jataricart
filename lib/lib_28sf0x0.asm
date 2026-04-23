@@ -68,6 +68,7 @@ flash_unlockchip_28SF
 	lda	$A41A
 	pla
 	tax
+	clc
 	rts
 
 softid_entry_28SF
@@ -83,6 +84,7 @@ flash_lockchip_28SF
 	sta $D500,x ; x =0 or $40, else will not unlock
 	jsr flash_lock_preamb_28SF
 	lda	$a40A
+	clc
 	rts
 
 flash_lock_preamb_28SF

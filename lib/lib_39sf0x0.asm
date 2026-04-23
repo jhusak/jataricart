@@ -61,9 +61,11 @@ flashoppreamble_acc_39SF ; 39sf0x0, 29F040
 flash_format_39SF_exit
 	ldx flash_format_storex_39SF:#0
 	sta $d500,x
+flash_wait_unit_39SF
+	rts
 flash_lockchip_39SF
 flash_unlockchip_39SF
-flash_wait_unit_39SF
+	sec
 	rts
 
 ;read_manufacturer_39SF
