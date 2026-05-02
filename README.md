@@ -5,6 +5,7 @@ __At the end of 01.2023 heavy rearrangement gas been done. Now DRY rule is fulfi
 __There are three memory versions of JatariCart (for now): 39SF0x0 based (JCart), 29F0x0 based (JCart A) and 28sf0x0 (JCart B). They are labelled as above.__
 
 __The project here is of max 256kB memory. 1 MB is available offline (on special demand). I have quiet a number of double gold plated pcb-s featuring two-chip 1MB of memory.__
+
 __Look at the https://github.com/gienekp/menu4car project - if you want to make a bunch of games running from one JatariCart__
 
 This software is for use with my super simple flash cartridge (look into eagle catalog; no gals, only 3 74xx elements and some caps and resistors). Top side is that without elements. The purpose is wide-use, especially for commercially published games, because of tiny price.
